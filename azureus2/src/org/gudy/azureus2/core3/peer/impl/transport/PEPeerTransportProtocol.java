@@ -3128,7 +3128,7 @@ implements PEPeerTransport
 		}
 		
 		if ( request_ok ){
-		
+			//TODO: add reject on invalid time
 			if ( outgoing_piece_message_handler == null || !outgoing_piece_message_handler.addPieceRequest( number, offset, length )){
 				
 				sendRejectRequest( number, offset, length );
