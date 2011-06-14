@@ -534,16 +534,4 @@ public void
 	print()
 	{
 	}
-
-	@Override
-	public void setStartTime(long _start_date) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public long getStartTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }

@@ -364,7 +364,4 @@ TOTorrent
 	 * and decode it yourself)
 	 */
 	String getUTF8Name();
-
-	void setStartTime(long _start_date);
-	long getStartTime();
 }

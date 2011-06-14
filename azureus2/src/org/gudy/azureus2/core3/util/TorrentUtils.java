@@ -2390,16 +2390,6 @@ TorrentUtils
 		public String getUTF8Name() {
 			return delegate.getUTF8Name();
 		}
-
-		@Override
-		public void setStartTime(long _start_date) {
-			delegate.setStartTime(_start_date);
-		}
-
-		@Override
-		public long getStartTime() {
-			return delegate.getStartTime();
-		}
 	}
 
 	/**

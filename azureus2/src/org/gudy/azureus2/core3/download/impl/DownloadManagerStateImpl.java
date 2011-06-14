@@ -4064,7 +4064,8 @@ DownloadManagerStateImpl
 	   		return( null );
       	}
 
-       public void
+       @Override
+	public void
        print()
       	{
 	   		if ( fixup()){
@@ -4076,14 +4077,16 @@ DownloadManagerStateImpl
      	/* (non-Javadoc)
      	 * @see org.gudy.azureus2.core3.logging.LogRelation#getLogRelationText()
      	 */
-     	public String getRelationText() {
+     	@Override
+		public String getRelationText() {
      		return "Torrent: '" + new String(getName()) + "'";  
      	}
 
      	/* (non-Javadoc)
      	 * @see org.gudy.azureus2.core3.logging.LogRelation#queryForClass(java.lang.Class)
      	 */
-     	public Object[] getQueryableInterfaces() {
+     	@Override
+		public Object[] getQueryableInterfaces() {
      		// yuck
      		try {
      			return new Object[] { AzureusCoreFactory.getSingleton()
@@ -4093,24 +4096,5 @@ DownloadManagerStateImpl
 
      		return null;
      	}
-
-		@Override
-		public void setStartTime(long _start_date) {
-	   		if ( fixup()){
-				
-				delegate.setStartTime( _start_date );
-			}
-			
-		}
-
-		@Override
-		public long getStartTime() {
-	   		if ( fixup()){
-				
-				return( delegate.getStartTime());
-			}
-	   		
-	   		return( 0 );
-		}
 	}
 }

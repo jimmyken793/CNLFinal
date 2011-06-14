@@ -598,22 +598,6 @@ TOTorrentImpl
 	
 	@Override
 	public long
-	getStartTime()
-	{
-		return( start_time );
-	}
-	
-	@Override
-	public void
-	setStartTime(
-		long		_start_time )
-	{
-		System.out.println("Set Start Time to " + _start_time);
-		start_time 	= _start_time;
-	}
-
-	@Override
-	public long
 	getCreationDate()
 	{
 		return( creation_date );

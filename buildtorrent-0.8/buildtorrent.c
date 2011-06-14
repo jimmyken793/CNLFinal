@@ -1359,6 +1359,8 @@ void bt_usage(void) {
     "\n"
     "options:\n"
     "--announce        -a  <announce>   : announce url (required)\n"
+    "--starttime       -t  <time>       : start time of the video\n"
+    "--videolength     -v  <length>     : length of the video\n"
     "--filelist        -f  <filelist>   : external file list (requires '-n')\n"
     "--name            -n  <name>       : torrent name, default based on input\n"
     "--announcelist    -A  <announces>  : announce url list (format: a,b1|b2,c)\n"
@@ -1391,7 +1393,8 @@ int main(int argc, char **argv) {
   char *namebase = NULL;
   char *outfile = NULL;
   char *commentstr = NULL;
-  char *starttimestr=NULL;
+  char *video_length_str = NULL;
+  char *start_time_str=NULL;
   char *filelistfilename = NULL;
   int lplen = -1;
   unsigned int plen = 262144;
@@ -1419,7 +1422,8 @@ int main(int argc, char **argv) {
   bt_data length = NULL;
   bt_data pathlist = NULL;
   bt_data creator = NULL;
-  bt_data starttime=NULL;
+  bt_data start_time=NULL;
+  bt_data video_length=NULL;
   bt_data creationdate = NULL;
   bt_data comment = NULL;
   bt_data private = NULL;
@@ -1453,9 +1457,11 @@ int main(int argc, char **argv) {
       { "quiet", 0, 0, 'q' },
       { "version", 0, 0, 'V' },
       { "help", 0, 0, 'h' },
+      { "videolength", 1, 0, 'v' },
+      { "starttime", 1, 0, 't' },
       { 0, 0, 0, 0 }
     };
-    char c = getopt_long(argc, argv, "hVqSsmCDa:f:n:A:w:l:L:c:p:t:", options, &optidx );
+    char c = getopt_long(argc, argv, "hVqSsmCDa:f:n:A:w:l:L:c:p:t:v:", options, &optidx );
     if (c == -1) {
       break;
     }
@@ -1491,7 +1497,10 @@ int main(int argc, char **argv) {
       privateopt = (strcmp(optarg, "0") == 0) ? 0 : 1;
       break;
     case ('t'):
-      starttimestr=optarg;
+      start_time_str=optarg;
+      break;
+    case ('v'):
+      video_length_str=optarg;
       break;
     case ('D'):
       nodate = 1;
@@ -1523,12 +1532,14 @@ int main(int argc, char **argv) {
       return 0;
     }
   }
-  if(starttimestr != NULL){
-    int starttime=atoi(starttimestr);
-    if(starttime==0){
-      fprintf(stderr, "buildtorrent: start time is invalid\n");
-      return 1;
-    }
+
+  if(start_time_str != NULL &&atoi(start_time_str)==0){
+    fprintf(stderr, "buildtorrent: start time is invalid\n");
+    return 1;
+  }
+  if(video_length_str != NULL &&atoi(video_length_str)==0){
+    fprintf(stderr, "buildtorrent: video length is invalid\n");
+    return 1;
   }
   if (!url) {
     fprintf(stderr, "buildtorrent: announce url required\n");
@@ -1755,9 +1766,20 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  if (starttimestr != NULL) {
-    starttime = bt_integer(atoi(starttimestr));
-    if(bt_dictionary_insert(torrent, strlen("start time"), "start time", starttime)){
+  if(bt_dictionary_insert(torrent, strlen("jomican streaming"), "jomican streaming", bt_integer(1))){
+    fprintf(stderr, "buildtorrent: couldn't insert jomican streaming stamp into torrent\n");
+    return 1;
+  }
+  if (video_length_str != NULL) {
+    video_length = bt_integer(atoi(video_length_str));
+    if(bt_dictionary_insert(torrent, strlen("video length"), "video length", video_length)){
+      fprintf(stderr, "buildtorrent: couldn't insert video length into torrent\n");
+      return 1;
+    }
+  }
+  if (start_time_str != NULL) {
+    start_time = bt_integer(atoi(start_time_str));
+    if(bt_dictionary_insert(torrent, strlen("start time"), "start time", start_time)){
       fprintf(stderr, "buildtorrent: couldn't insert start time into torrent\n");
       return 1;
     }
