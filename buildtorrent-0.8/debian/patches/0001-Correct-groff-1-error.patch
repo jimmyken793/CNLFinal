@@ -1,0 +1,37 @@
+From d811172056ff045c3dbb87d4b7dd1ac9952eca04 Mon Sep 17 00:00:00 2001
+From: Jari Aalto <jari.aalto@cante.net>
+Date: Mon, 11 Oct 2010 11:17:05 +0300
+Subject: [PATCH] Correct groff(1) error
+Organization: Private
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+	torrent.1:40: warning [p 1, 4.7i]: cannot adjust line
+
+by adding .nf and .fi around the long path names (
+/data/files/linux.iso ...), so that groff does not try to break in
+words.
+
+Signed-off-by: Jari Aalto <jari.aalto@cante.net>
+---
+ buildtorrent.1 |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/buildtorrent.1 b/buildtorrent.1
+index 1f98356..aabcf55 100644
+--- a/buildtorrent.1
++++ b/buildtorrent.1
+@@ -37,8 +37,10 @@ can be used to escape newlines and
+ characters inside names.  For example:
+ .P
+ .RS
++.nf
+ .I /data/files/linux.iso|bin/linux.iso
+ .I /data/files/linux.txt|doc/linux.txt
++.fi
+ .RE
+ .P
+ .RS
+-- 
+1.7.1
+

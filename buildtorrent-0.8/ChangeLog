@@ -1,0 +1,44 @@
+version	date
+	changes
+
+0.8	2010-01-31
+	new: -f option to build torrent using external file list
+	new: -n option to set torrent name
+	new: -L option to set piece size as a power of 2
+	new: -w option for webseed url list
+	fix: much internal refactoring to make future changes easier
+	new: switched to git for source code management
+	new: document new options
+	new: describe announce-list syntax in man page
+	fix: announce-list segfault on 64bit
+
+0.7	2008-04-12
+	fix: handle empty files better
+	fix: badly formatted error messages
+	fix: crash on nonsense piece length
+
+0.6	2007-12-04
+	new: autoconf-iscated with endianness checking
+	new: man page
+
+0.5	2007-09-19 16:15
+	new: progress bar
+	new: support large files
+
+0.4	2007-09-03 15:15
+	fix: handle directories with '/' correctly
+
+0.3	2007-06-03 20:30
+	new: no more cryptic return codes; better error messages
+	new: --quiet flag turns off all non-error output
+	new: torrent pretty printing (including pieces if requested)
+	new: torrent optional: announce-list
+
+0.2	2007-06-03 15:40
+	new: info/file optional: md5sum
+	new: info optional: private
+	new: torrent optional: creation date, created by, comment
+	new: single-file mode
+
+0.1	?
+	initial announcement

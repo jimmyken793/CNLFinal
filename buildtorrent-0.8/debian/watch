@@ -1,0 +1,3 @@
+version=3
+# Not currently active, because upstream does not have a proper page
+# http://claudiusmaximus.goto10.org/cm  .*buildtorrent-([\d.]+).*\.tar\.gz

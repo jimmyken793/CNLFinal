@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+override_dh_auto_configure:
+	cp -f /usr/share/misc/config.guess .
+	cp -f /usr/share/misc/config.sub .
+	dh_auto_configure
+
+%:
+	dh $@
+
+# End of file

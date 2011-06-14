@@ -1,0 +1,17 @@
+target	task
+[0.9]	multithreaded piece hashing if desired/possible
+	* 1 disk I/O thread fills piece-length buffers
+	* M buffers (maximum) in queue (prevent RAM DoS)
+	* N hash threads claim buffers and return hashes
+	* default N to number of CPU cores
+[0.9]	use existing hash libraries if desired/possible
+	* which libraries provide sha1 and/or md5?
+	* OpenSSL requires a license exception?
+[0.9]	simplify error handling code:
+	* too many different (pointless) error messages
+	* too much duplication of boilerplate code/data
+	* too much effort threading error state
+[???]	improve cross-platform portability
+[???]	improve memory efficiency
+[???]	multithreaded file md5sum hashing
+[1.0]	feature-complete and bug free

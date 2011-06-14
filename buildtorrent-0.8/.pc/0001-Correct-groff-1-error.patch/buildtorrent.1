@@ -1,0 +1,130 @@
+.TH BUILDTORRENT "1" "January 2010" "0.8" "User Commands"
+.SH NAME
+buildtorrent \- a torrent file creation program.
+.SH SYNOPSIS
+.B buildtorrent
+[\fIOPTIONS\fR] \fI\-a announceurl input output\fR
+.RS 0
+.B buildtorrent
+[\fIOPTIONS\fR] \fI\-a announceurl \-f filelist \-n name output\fR
+.RE
+.SH DESCRIPTION
+.B buildtorrent
+is a torrent file creation program.
+Given an announce url and an input file or directory,
+.B buildtorrent
+generates an output
+.I .torrent
+file that can be used by torrent clients.
+.SH OPTIONS
+.TP
+.BI \-a\  announce ,\ \-\-announce= url
+Announce URL (required).
+.TP
+.BI \-f\  filelist ,\ \-\-filelist= filelist
+A text file (or
+.I -
+for standard input) containing a list of files to add to the output
+torrent file, together with the path to use inside the torrent.  One
+file is given per line, use
+.I /
+as path separator for the torrent path, use
+.I |
+to separate the filesystem path from the torrent path.  Backslash
+.I \e
+can be used to escape newlines and
+.I |
+characters inside names.  For example:
+.P
+.RS
+.I /data/files/linux.iso|bin/linux.iso
+.I /data/files/linux.txt|doc/linux.txt
+.RE
+.P
+.RS
+Using this option requires that the
+.I \-\-name
+option be used.
+.RE
+.TP
+.BI \-n\  name ,\ \-\-name= name
+Specify the name for the torrent.  Usage of this option is required when the
+.I \-\-filelist
+option is used, in which case it specifies the name of the torrent directory.
+Usage without a file list overrides the name of the directory or file given
+on the command line.
+.TP
+.BI \-A\  announces ,\ \-\-announcelist= announces
+Additional announce URL list.  Use
+.I ,
+to separate outer level lists, and
+.I |
+to separate inner level items; for example:
+.P
+.RS
+.I a,b1|b2,c
+.RE
+.TP
+.BI \-w\  webseeds ,\ \-\-webseeds= webseeds
+Additional WebSeed URL list.  Use
+.I ,
+to separate items; for example:
+.P
+.RS
+.I a,b,c
+.RE
+.TP
+.BI \-l\  length ,\ \-\-piecelength= length
+Piece length in bytes (default 262144).
+.TP
+.BI \-L\  length ,\ \-\-piecesize= size
+Use 2^size as piece length (default 18) (overrides
+.I \-l
+).
+.TP
+.BI \-c\  comment ,\ \-\-comment= comment
+User comment (omitted by default).
+.TP
+.BI \-p\  private ,\ \-\-private= private
+Private flag (either 0 or 1).
+.TP
+.B \-D, \-\-nodate
+Omit the
+.I creation date
+field.
+.TP
+.B \-C, \-\-nocreator
+Omit the
+.I created by
+field.
+.TP
+.B \-m, \-\-md5sum
+Add an
+.I md5sum
+field for each file.
+.TP
+.B \-s, \-\-show
+Show generated torrent structure.
+.TP
+.B \-S, \-\-showall
+Show generated torrent structure, including piece data.
+.TP
+.B \-q, \-\-quiet
+Quiet operation with reduced output.
+.TP
+.B \-V, \-\-version
+Show the version string.
+.TP
+.B \-h, \-\-help
+Show a help screen with brief usage information.
+.SH AUTHORS
+Claude Heiland-Allen (claudiusmaximus@goto10.org)
+.SH SEE ALSO
+.BR createtorrent (1),
+.BR mktorrent (1)
+.RS 0
+http://wiki.theory.org/BitTorrentSpecification
+.RS 0
+http://bittorrent.org/beps/bep\_0012.html
+.RS 0
+http://www.getright.com/seedtorrent.html

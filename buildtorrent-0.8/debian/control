@@ -1,0 +1,17 @@
+Source: buildtorrent
+Section: net
+Priority: optional
+Maintainer: Jari Aalto <jari.aalto@cante.net>
+Build-Depends: debhelper (>= 8), autotools-dev
+Standards-Version: 3.9.1
+Vcs-Browser: http://git.debian.org/?p=collab-maint/buildtorrent.git
+Vcs-Git: git://git.debian.org/git/collab-maint/buildtorrent.git
+Homepage: http://claudiusmaximus.goto10.org/cm/torrent.html
+
+Package: buildtorrent
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: command line torrent creation program
+ buildtorrent is a torrent file creation program. Given an announce url and an
+ input file or directory, buildtorrent generates an output .torrent file that
+ can be used by torrent clients.

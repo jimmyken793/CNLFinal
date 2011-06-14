@@ -1,0 +1,70 @@
+buildtorrent (0.8-1) unstable; urgency=low
+
+  * New upstream release (Closes: #589927).
+  * debian/compat
+    - Update to 8.
+  * debian/control
+    - (Build-Depends): update to debhelper 8.
+    - (Homepage): Update URL.
+    - (Standards-Version): Update to 3.9.1.
+  * debian/copyright
+    - (Download): update URL.
+    - (X-Upstream-Vcs-Homepage): New field.
+  * debian/patches
+    - (0001): Fix manual page problem: 'cannot adjust line'.
+  * debian/watch
+    - New file.
+
+ -- Jari Aalto <jari.aalto@cante.net>  Mon, 11 Oct 2010 11:35:57 +0300
+
+buildtorrent (0.7.2-5) unstable; urgency=low
+
+  * New maintainer (Closes: #543834).
+    - Move to packaging format "3.0 (quilt)".
+  * debian/clean
+    - New file.
+  * debian/control
+    - (Build-Depends): update to debhelper 7.1.
+    - (Standards-Version): update to 3.8.4
+    - (Vcs-*): new fields.
+  * debian/copyright
+    - (debian/*): Use FSF URL.
+  * debian/rules
+    - (override_dh_auto_clean): remove, not needed.
+  * debian/source/format
+    - New file.
+  * debian/watch
+    - New file.
+
+ -- Jari Aalto <jari.aalto@cante.net>  Thu, 11 Mar 2010 18:31:54 +0200
+
+buildtorrent (0.7.2-4) unstable; urgency=low
+
+  * Updating to standards version 3.8.3.
+  * Removing vcs fields.
+  * Orphaning package.
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 27 Aug 2009 07:04:36 +0200
+
+buildtorrent (0.7.2-3) unstable; urgency=low
+
+  * Sorting depends.
+  * Minimizing rules file.
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 03 Aug 2009 02:05:50 +0200
+
+buildtorrent (0.7.2-2) unstable; urgency=low
+
+  * Replacing obsolete dh_clean -k with dh_prep.
+  * Updating year in copyright file.
+  * Upgrading package to standards version 3.8.2.
+  * Updating rules file to current state of the art.
+  * Prefixing debhelper files with package name.
+
+ -- Daniel Baumann <daniel@debian.org>  Fri, 17 Jul 2009 00:25:33 +0200
+
+buildtorrent (0.7.2-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Daniel Baumann <daniel@debian.org>  Tue, 14 Oct 2008 10:21:00 +0200
