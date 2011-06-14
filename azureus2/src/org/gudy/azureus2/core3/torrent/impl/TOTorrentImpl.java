@@ -22,13 +22,37 @@
 package org.gudy.azureus2.core3.torrent.impl;
 
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.TOTorrentListener;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.BEncoder;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.FileUtil;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.LightHashMap;
+import org.gudy.azureus2.core3.util.SHA1Hasher;
+import org.gudy.azureus2.core3.util.StringInterner;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 
@@ -40,6 +64,7 @@ TOTorrentImpl
 	protected static final String TK_ANNOUNCE			= "announce";
 	protected static final String TK_ANNOUNCE_LIST		= "announce-list";
 	protected static final String TK_COMMENT			= "comment";
+	protected static final String TK_START_TIME			= "start time";
 	protected static final String TK_CREATION_DATE		= "creation date";
 	protected static final String TK_CREATED_BY			= "created by";
 	
@@ -84,6 +109,7 @@ TOTorrentImpl
 	private boolean				simple_torrent;
 	private TOTorrentFileImpl[]	files;
 
+	private long				start_time;
 	private long				creation_date;
 	private byte[]				created_by;
 	
@@ -137,6 +163,7 @@ TOTorrentImpl
 		}
 	}
 	
+	@Override
 	public void
 	serialiseToBEncodedFile(
 		final File		output_file )
@@ -296,6 +323,7 @@ TOTorrentImpl
 		}
 	}		
 
+	@Override
 	public Map
 	serialiseToMap()
 	
@@ -449,6 +477,7 @@ TOTorrentImpl
 		return( root );
 	}
 	
+	@Override
 	public void
 	serialiseToXMLFile(
 	  File		file )
@@ -465,6 +494,7 @@ TOTorrentImpl
 		serialiser.serialiseToFile( file );
 	}
 	
+	@Override
 	public byte[]
 	getName()
 	{
@@ -478,6 +508,7 @@ TOTorrentImpl
 		torrent_name	= _name;
 	}
 	
+	@Override
 	public String
 	getUTF8Name()
 	{
@@ -496,12 +527,14 @@ TOTorrentImpl
 		torrent_name_utf8	= _name;
 	}
 	
+	@Override
 	public boolean
 	isSimpleTorrent()
 	{
 		return( simple_torrent );
 	}
 	
+	@Override
 	public byte[]
 	getComment()
 	{
@@ -516,6 +549,7 @@ TOTorrentImpl
 		comment = _comment;
 	}
 	
+	@Override
 	public void
 	setComment(
 		String	_comment )
@@ -536,12 +570,14 @@ TOTorrentImpl
 		}
 	}
 		
+	@Override
 	public URL
 	getAnnounceURL()
 	{
 		return( announce_url );
 	}
 	
+	@Override
 	public boolean
 	setAnnounceURL(
 		URL		url )
@@ -549,8 +585,9 @@ TOTorrentImpl
 		URL newURL = anonymityTransform( url );
 		String s0 = (newURL == null) ? "" : newURL.toString();
 		String s1 = (announce_url == null) ? "" : announce_url.toString();
-		if (s0.equals(s1))
+		if (s0.equals(s1)) {
 			return false;
+		}
 		
 		announce_url	= StringInterner.internURL(newURL);
 		
@@ -558,13 +595,31 @@ TOTorrentImpl
 		
 		return true;
 	}
+	
+	@Override
+	public long
+	getStartTime()
+	{
+		return( start_time );
+	}
+	
+	@Override
+	public void
+	setStartTime(
+		long		_start_time )
+	{
+		System.out.println("Set Start Time to " + _start_time);
+		start_time 	= _start_time;
+	}
 
+	@Override
 	public long
 	getCreationDate()
 	{
 		return( creation_date );
 	}
 	
+	@Override
 	public void
 	setCreationDate(
 		long		_creation_date )
@@ -572,6 +627,7 @@ TOTorrentImpl
 		creation_date 	= _creation_date;
 	}
 	
+	@Override
 	public void
 	setCreatedBy(
 		byte[]		_created_by )
@@ -595,18 +651,21 @@ TOTorrentImpl
 		}	
 	}
 	
+	@Override
 	public byte[]
 	getCreatedBy()
 	{
 		return( created_by );
 	}
 	
+	@Override
 	public boolean
 	isCreated()
 	{
 		return( created );
 	}
 	
+	@Override
 	public byte[]
 	getHash()
 	
@@ -624,6 +683,7 @@ TOTorrentImpl
 		return( torrent_hash );
 	}
 	
+	@Override
 	public HashWrapper
 	getHashWrapper()
 
@@ -637,6 +697,7 @@ TOTorrentImpl
 		return( torrent_hash_wrapper );
 	}
 	
+	@Override
 	public boolean
 	hasSameHashAs(
 		TOTorrent		other )
@@ -681,6 +742,7 @@ TOTorrentImpl
 		}
 	}
 	
+	@Override
 	public void 
 	setHashOverride(
 		byte[] 	hash )
@@ -720,6 +782,7 @@ TOTorrentImpl
 		return( torrent_hash_override );
 	}
 	
+	@Override
 	public void
 	setPrivate(
 		boolean	_private_torrent )
@@ -735,6 +798,7 @@ TOTorrentImpl
 		getHash();
 	}
 	
+	@Override
 	public boolean
 	getPrivate()
 	{
@@ -748,6 +812,7 @@ TOTorrentImpl
 		return( false );
 	}
 	
+	@Override
 	public TOTorrentAnnounceURLGroup
 	getAnnounceURLGroup()
 	{
@@ -761,6 +826,7 @@ TOTorrentImpl
 		announce_group.addSet( new TOTorrentAnnounceURLSetImpl( this, urls ));
 	}
 	
+	@Override
 	public long
 	getSize()
 	{
@@ -774,6 +840,7 @@ TOTorrentImpl
 		return( res );
 	}
 
+	@Override
 	public long
 	getPieceLength()
 	{
@@ -787,6 +854,7 @@ TOTorrentImpl
 		piece_length	= _length;
 	}
 	
+	@Override
 	public int
 	getNumberOfPieces()
 	{
@@ -803,12 +871,14 @@ TOTorrentImpl
 		return( number_of_pieces );
 	}
 	
+	@Override
 	public byte[][]
 	getPieces()
 	{
 		return( pieces );
 	}
 	
+	@Override
 	public void
 	setPieces(
 		byte[][]	_pieces )
@@ -816,6 +886,7 @@ TOTorrentImpl
 		pieces = _pieces;
 	}
 	
+	@Override
 	public TOTorrentFile[]
 	getFiles()
 	{
@@ -848,6 +919,7 @@ TOTorrentImpl
 		return( additional_properties );
 	}
 	
+	@Override
 	public void
 	setAdditionalStringProperty(
 		String		name,
@@ -865,6 +937,7 @@ TOTorrentImpl
 		}
 	}
 		
+	@Override
 	public String
 	getAdditionalStringProperty(
 		String		name )
@@ -883,6 +956,7 @@ TOTorrentImpl
 		}
 	}
 	
+	@Override
 	public void
 	setAdditionalByteArrayProperty(
 		String		name,
@@ -891,6 +965,7 @@ TOTorrentImpl
 		additional_properties.put( name, value );
 	}
 		
+	@Override
 	public void
 	setAdditionalProperty(
 		String		name,
@@ -906,6 +981,7 @@ TOTorrentImpl
 		}
 	}
 	
+	@Override
 	public byte[]
 	getAdditionalByteArrayProperty(
 		String		name )
@@ -920,6 +996,7 @@ TOTorrentImpl
 		return( null );
 	}
 	
+	@Override
 	public void
 	setAdditionalLongProperty(
 		String		name,
@@ -928,6 +1005,7 @@ TOTorrentImpl
 		additional_properties.put( name, value );
 	}
 		
+	@Override
 	public Long
 	getAdditionalLongProperty(
 		String		name )
@@ -942,6 +1020,7 @@ TOTorrentImpl
 		return( null );
 	}
 	
+	@Override
 	public void
 	setAdditionalListProperty(
 		String		name,
@@ -950,6 +1029,7 @@ TOTorrentImpl
 		additional_properties.put( name, value );
 	}
 		
+	@Override
 	public List
 	getAdditionalListProperty(
 		String		name )
@@ -964,6 +1044,7 @@ TOTorrentImpl
 		return( null );	
 	}
 	
+	@Override
 	public void
 	setAdditionalMapProperty(
 		String		name,
@@ -972,6 +1053,7 @@ TOTorrentImpl
 		additional_properties.put( name, value );
 	}
 		
+	@Override
 	public Map
 	getAdditionalMapProperty(
 		String		name )
@@ -986,6 +1068,7 @@ TOTorrentImpl
 		return( null );	
 	}
 	
+	@Override
 	public Object
 	getAdditionalProperty(
 		String		name )
@@ -993,6 +1076,7 @@ TOTorrentImpl
 		return(additional_properties.get( name ));
 	}
 	
+	@Override
 	public void
 	removeAdditionalProperty(
 		String name )
@@ -1000,6 +1084,7 @@ TOTorrentImpl
 		additional_properties.remove( name );
 	}
 
+	@Override
 	public void
 	removeAdditionalProperties()
 	{
@@ -1144,6 +1229,7 @@ TOTorrentImpl
 		return( url );
 	}
 	
+	@Override
 	public void
 	print()
 	{
@@ -1264,7 +1350,8 @@ TOTorrentImpl
 		}
 	}
 	
- 	public void
+ 	@Override
+	public void
 	addListener(
 		TOTorrentListener		l )
 	{
@@ -1284,6 +1371,7 @@ TOTorrentImpl
 		}
 	}
 
+	@Override
 	public void
 	removeListener(
 		TOTorrentListener		l )
@@ -1306,6 +1394,7 @@ TOTorrentImpl
 		}
 	}
 	
+	@Override
 	public AEMonitor
 	getMonitor()
 	{
@@ -1315,6 +1404,7 @@ TOTorrentImpl
 	/* (non-Javadoc)
 	 * @see org.gudy.azureus2.core3.logging.LogRelation#getLogRelationText()
 	 */
+	@Override
 	public String getRelationText() {
 		return "Torrent: '" + new String(torrent_name) + "'";  
 	}
@@ -1322,6 +1412,7 @@ TOTorrentImpl
 	/* (non-Javadoc)
 	 * @see org.gudy.azureus2.core3.logging.LogRelation#queryForClass(java.lang.Class)
 	 */
+	@Override
 	public Object[] getQueryableInterfaces() {
 		// yuck
 		try {

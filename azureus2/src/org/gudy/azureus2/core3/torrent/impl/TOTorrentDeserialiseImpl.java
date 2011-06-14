@@ -22,13 +22,25 @@
 package org.gudy.azureus2.core3.torrent.impl;
 
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 import org.gudy.azureus2.core3.html.HTMLUtils;
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.util.BDecoder;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.StringInterner;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 
 public class 
 TOTorrentDeserialiseImpl
@@ -402,6 +414,23 @@ TOTorrentDeserialiseImpl
 					}catch( Exception e ){
 						
 						System.out.println( "creation_date extraction fails, ignoring");
+					}
+									
+				}else if ( key.equalsIgnoreCase( TK_START_TIME )){
+			
+					// non standard, don't fail if format wrong
+						
+					try{
+				
+						Long start_time = (Long)meta_data.get( TK_START_TIME );
+					
+						if ( start_time != null ){
+						
+							setStartTime( start_time.longValue());
+						}
+					}catch( Exception e ){
+						
+						System.out.println( "start_time extraction fails, ignoring");
 					}
 									
 				}else if ( key.equalsIgnoreCase( TK_INFO )){

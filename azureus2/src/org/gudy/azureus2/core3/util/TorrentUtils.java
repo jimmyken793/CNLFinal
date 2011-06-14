@@ -26,20 +26,43 @@ package org.gudy.azureus2.core3.util;
  *
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
-import com.aelitis.azureus.core.*;
-import com.aelitis.azureus.core.util.CopyOnWriteList;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
+import java.util.WeakHashMap;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.internat.*;
+import org.gudy.azureus2.core3.disk.DiskManagerFactory;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerState;
+import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
+import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.disk.*;
-import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
+import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.TOTorrentListener;
+
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.util.CopyOnWriteList;
 
 
 public class 
@@ -66,6 +89,7 @@ TorrentUtils
 	private static ThreadLocal<Map<String,Object>>		tls	= 
 		new ThreadLocal<Map<String,Object>>()
 		{
+			@Override
 			public Map<String,Object>
 			initialValue()
 			{
@@ -82,6 +106,7 @@ TorrentUtils
 	static {
 		COConfigurationManager.addAndFireParameterListener("Save Torrent Backup",
 				new ParameterListener() {
+					@Override
 					public void parameterChanged(String parameterName) {
 						bSaveTorrentBackup = COConfigurationManager.getBooleanParameter(parameterName);
 					}
@@ -540,7 +565,7 @@ TorrentUtils
 			
 			if ( groups.size() == 1 ){
 				
-				List	set = (List)groups.get(0);
+				List	set = groups.get(0);
 				
 				if ( set.size() == 1 ){
 					
@@ -557,7 +582,7 @@ TorrentUtils
 			
 			for (int i=0;i<groups.size();i++){
 				
-				List	set = (List)groups.get(i);
+				List	set = groups.get(i);
 				
 				URL[]	urls = new URL[set.size()];
 				
@@ -1457,6 +1482,7 @@ TorrentUtils
 					"File.Torrent.IgnoreFiles",
 					new ParameterListener()
 					{
+						@Override
 						public void 
 						parameterChanged(
 							String parameterName)
@@ -1514,6 +1540,7 @@ TorrentUtils
 			PIECE_HASH_TIMEOUT/2,
 			new TimerEventPerformer()
 			{
+				@Override
 				public void
 				perform(
 					TimerEvent	event )
@@ -1546,8 +1573,9 @@ TorrentUtils
 	{
 		synchronized (TorrentUtils.class)
 		{
-			for (int i = 0; i < fluff.length; i++)
+			for (int i = 0; i < fluff.length; i++) {
 				torrentFluffKeyset.add(fluff[i]);
+			}
 		}
 	}
 	
@@ -1591,6 +1619,7 @@ TorrentUtils
 			}
 		}
 		
+		@Override
 		public void
 		setDiscardFluff(
 			boolean	discard )
@@ -1634,24 +1663,28 @@ TorrentUtils
 			}
 		}
 		
+		@Override
 		public byte[]
 		getName()
 		{
 			return( delegate.getName());
 		}
 				
+		@Override
 		public boolean
 		isSimpleTorrent()
 		{
 			return( delegate.isSimpleTorrent());
 		}
 				
+		@Override
 		public byte[]
 		getComment()
 		{
 			return( delegate.getComment());		
 		}
 
+		@Override
 		public void
 		setComment(
 			String		comment )
@@ -1659,12 +1692,14 @@ TorrentUtils
 			delegate.setComment( comment );
 		}
 				
+		@Override
 		public long
 		getCreationDate()
 		{
 			return( delegate.getCreationDate());
 		}
 		
+		@Override
 		public void
 		setCreationDate(
 			long		date )
@@ -1672,31 +1707,36 @@ TorrentUtils
 			delegate.setCreationDate( date );
 		}
 		
+		@Override
 		public byte[]
 		getCreatedBy()
 		{
 			return( delegate.getCreatedBy());
 		}
 		
-	 	public void
+	 	@Override
+		public void
 		setCreatedBy(
 			byte[]		cb )
 	   	{
 	  		delegate.setCreatedBy( cb );
 	   	}
 	 	
+		@Override
 		public boolean
 		isCreated()
 		{
 			return( delegate.isCreated());
 		}
 		
+		@Override
 		public URL
 		getAnnounceURL()
 		{
 			return( delegate.getAnnounceURL());
 		}
 
+		@Override
 		public boolean
 		setAnnounceURL(
 			URL		url )
@@ -1705,6 +1745,7 @@ TorrentUtils
 		}
 			
 		
+		@Override
 		public TOTorrentAnnounceURLGroup
 		getAnnounceURLGroup()
 		{
@@ -1746,6 +1787,7 @@ TorrentUtils
 			}
 		}
 		
+		@Override
 		public byte[][]
 		getPieces()
 		
@@ -1844,6 +1886,7 @@ TorrentUtils
 			 * @return
 			 */
 		
+		@Override
 		public byte[][]
 		peekPieces()
 		
@@ -1852,6 +1895,7 @@ TorrentUtils
 			return( delegate.getPieces());
 		}
 		
+		@Override
 		public void
 		setPieces(
 			byte[][]	pieces )
@@ -1861,30 +1905,35 @@ TorrentUtils
 			throw( new TOTorrentException( "Unsupported Operation", TOTorrentException.RT_WRITE_FAILS ));
 		}
 		
+		@Override
 		public long
 		getPieceLength()
 		{
 			return( delegate.getPieceLength());
 		}
 
+		@Override
 		public int
 		getNumberOfPieces()
 		{
 			return( delegate.getNumberOfPieces());
 		}
 		
+		@Override
 		public long
 		getSize()
 		{
 			return( delegate.getSize());
 		}
 		
+		@Override
 		public TOTorrentFile[]
 		getFiles()
 		{
 			return( delegate.getFiles());
 		}
 				 
+		@Override
 		public byte[]
 		getHash()
 					
@@ -1893,6 +1942,7 @@ TorrentUtils
 			return( delegate.getHash());
 		}
 		
+		@Override
 		public HashWrapper
 		getHashWrapper()
 					
@@ -1901,7 +1951,8 @@ TorrentUtils
 			return( delegate.getHashWrapper());
 		}
 		
-	   	public void 
+	   	@Override
+		public void 
     	setHashOverride(
     		byte[] hash ) 
     	
@@ -1910,12 +1961,14 @@ TorrentUtils
     		throw( new TOTorrentException( "Not supported", TOTorrentException.RT_HASH_FAILS ));
     	}
 	   	
+		@Override
 		public boolean
 		getPrivate()
 		{
 			return( delegate.getPrivate());
 		}
 		
+		@Override
 		public void
 		setPrivate(
 			boolean	_private )
@@ -1927,6 +1980,7 @@ TorrentUtils
 			throw( new TOTorrentException( "Can't amend private attribute", TOTorrentException.RT_WRITE_FAILS ));
 		}
 		
+		@Override
 		public boolean
 		hasSameHashAs(
 			TOTorrent		other )
@@ -1934,6 +1988,7 @@ TorrentUtils
 			return( delegate.hasSameHashAs( other ));
 		}
 				
+		@Override
 		public void
 		setAdditionalStringProperty(
 			String		name,
@@ -1942,6 +1997,7 @@ TorrentUtils
 			delegate.setAdditionalStringProperty( name, value );
 		}
 			
+		@Override
 		public String
 		getAdditionalStringProperty(
 			String		name )
@@ -1949,6 +2005,7 @@ TorrentUtils
 			return( delegate.getAdditionalStringProperty( name ));
 		}
 			
+		@Override
 		public void
 		setAdditionalByteArrayProperty(
 			String		name,
@@ -1957,6 +2014,7 @@ TorrentUtils
 			delegate.setAdditionalByteArrayProperty( name, value );
 		}
 			
+		@Override
 		public byte[]
 		getAdditionalByteArrayProperty(
 			String		name )
@@ -1964,6 +2022,7 @@ TorrentUtils
 			return( delegate.getAdditionalByteArrayProperty( name ));
 		}
 		
+		@Override
 		public void
 		setAdditionalLongProperty(
 			String		name,
@@ -1972,6 +2031,7 @@ TorrentUtils
 			delegate.setAdditionalLongProperty( name, value );
 		}
 			
+		@Override
 		public Long
 		getAdditionalLongProperty(
 			String		name )
@@ -1980,6 +2040,7 @@ TorrentUtils
 		}
 			
 		
+		@Override
 		public void
 		setAdditionalListProperty(
 			String		name,
@@ -1988,6 +2049,7 @@ TorrentUtils
 			delegate.setAdditionalListProperty( name, value );
 		}
 			
+		@Override
 		public List
 		getAdditionalListProperty(
 			String		name )
@@ -1995,6 +2057,7 @@ TorrentUtils
 			return( delegate.getAdditionalListProperty( name ));
 		}
 			
+		@Override
 		public void
 		setAdditionalMapProperty(
 			String		name,
@@ -2021,6 +2084,7 @@ TorrentUtils
 			}
 		}
 			
+		@Override
 		public Map
 		getAdditionalMapProperty(
 			String		name )
@@ -2057,6 +2121,7 @@ TorrentUtils
 			return( delegate.getAdditionalMapProperty( name ));
 		}
 		
+		@Override
 		public Object getAdditionalProperty(String name) {
 			if (torrentFluffKeyset.contains(name))
 			{
@@ -2089,6 +2154,7 @@ TorrentUtils
 			return delegate.getAdditionalProperty(name);
 		}
 
+		@Override
 		public void
 		setAdditionalProperty(
 			String		name,
@@ -2115,12 +2181,14 @@ TorrentUtils
 			}
 		}
 		
+		@Override
 		public void
 		removeAdditionalProperty(
 			String name )
 		{
-			if(delegate.getAdditionalProperty(name) == null)
+			if(delegate.getAdditionalProperty(name) == null) {
 				return;
+			}
 			
 			if ( torrentFluffKeyset.contains(name)){
 
@@ -2143,6 +2211,7 @@ TorrentUtils
 			}
 		}	
 		
+		@Override
 		public void
 		removeAdditionalProperties()
 		{
@@ -2159,6 +2228,7 @@ TorrentUtils
 			}
 		}		
 
+		@Override
 		public void
 		serialiseToBEncodedFile(
 			File		target_file )
@@ -2198,6 +2268,7 @@ TorrentUtils
 		}
 
 
+		@Override
 		public Map
 		serialiseToMap()
 			  
@@ -2234,6 +2305,7 @@ TorrentUtils
 		}
 
 
+		@Override
 		public void
 		serialiseToXMLFile(
 			File		target_file )
@@ -2267,13 +2339,15 @@ TorrentUtils
 			}
 		}
 
-	 	public void
+	 	@Override
+		public void
 		addListener(
 			TOTorrentListener		l )
 		{
 	 		delegate.addListener( l );
 		}
 
+		@Override
 		public void
 		removeListener(
 			TOTorrentListener		l )
@@ -2281,6 +2355,7 @@ TorrentUtils
 	 		delegate.removeListener( l );
 		}
 		
+		@Override
 		public AEMonitor
 		getMonitor()
 		{
@@ -2288,26 +2363,42 @@ TorrentUtils
 		}
 
 
+		@Override
 		public void
 		print()
 		{
 			delegate.print();
 		}
 
+		@Override
 		public String getRelationText() {
-			if (delegate instanceof LogRelation)
+			if (delegate instanceof LogRelation) {
 				return ((LogRelation)delegate).getRelationText();
+			}
 			return delegate.toString();
 		}
 
+		@Override
 		public Object[] getQueryableInterfaces() {
-			if (delegate instanceof LogRelation)
+			if (delegate instanceof LogRelation) {
 				return ((LogRelation)delegate).getQueryableInterfaces();
+			}
 			return super.getQueryableInterfaces();
 		}
 
+		@Override
 		public String getUTF8Name() {
 			return delegate.getUTF8Name();
+		}
+
+		@Override
+		public void setStartTime(long _start_date) {
+			delegate.setStartTime(_start_date);
+		}
+
+		@Override
+		public long getStartTime() {
+			return delegate.getStartTime();
 		}
 	}
 
@@ -2327,11 +2418,12 @@ TorrentUtils
 		File torrentDir;
 		boolean saveTorrents = persistent
 				&& COConfigurationManager.getBooleanParameter("Save Torrent Files");
-		if (saveTorrents)
+		if (saveTorrents) {
 			torrentDir = new File(COConfigurationManager
 					.getDirectoryParameter("General_sDefaultTorrent_Directory"));
-		else
+		} else {
 			torrentDir = new File(f.getParent());
+		}
 
 		//if the torrent is already in the completed files dir, use this
 		//torrent instead of creating a new one in the default dir
@@ -2455,12 +2547,15 @@ TorrentUtils
 	 */
 	public static boolean isTorrentFile(String filename) throws FileNotFoundException, IOException {
 	  File check = new File(filename);
-	  if (!check.exists())
-	    throw new FileNotFoundException("File "+filename+" not found.");
-	  if (!check.canRead())
-	    throw new IOException("File "+filename+" cannot be read.");
-	  if (check.isDirectory())
-	    throw new FileIsADirectoryException("File "+filename+" is a directory.");
+	  if (!check.exists()) {
+		throw new FileNotFoundException("File "+filename+" not found.");
+	}
+	  if (!check.canRead()) {
+		throw new IOException("File "+filename+" cannot be read.");
+	}
+	  if (check.isDirectory()) {
+		throw new FileIsADirectoryException("File "+filename+" is a directory.");
+	}
 	  try {
 	    TOTorrentFactory.deserialiseFromBEncodedFile(check);
 	    return true;

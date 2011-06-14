@@ -22,9 +22,20 @@
 
 package org.gudy.azureus2.core3.download.impl;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -34,15 +45,37 @@ import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManagerFactory;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerState;
+import org.gudy.azureus2.core3.download.DownloadManagerStateAttributeListener;
+import org.gudy.azureus2.core3.download.DownloadManagerStateEvent;
+import org.gudy.azureus2.core3.download.DownloadManagerStateListener;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.LogRelation;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.TOTorrentListener;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AENetworkClassifier;
+import org.gudy.azureus2.core3.util.BDecoder;
+import org.gudy.azureus2.core3.util.BEncoder;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.FileUtil;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.IndentWriter;
+import org.gudy.azureus2.core3.util.LightHashMap;
+import org.gudy.azureus2.core3.util.RandomUtils;
+import org.gudy.azureus2.core3.util.StringInterner;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.util.CaseSensitiveFileMap;
@@ -140,6 +173,7 @@ DownloadManagerStateImpl
 	private static ThreadLocal		tls_wbr	= 
 		new ThreadLocal()
 		{
+			@Override
 			public Object
 			initialValue()
 			{
@@ -534,6 +568,7 @@ DownloadManagerStateImpl
         addListeners();
 	}
 	
+	@Override
 	public void 
 	parameterChanged(
 		String parameterName)
@@ -567,6 +602,7 @@ DownloadManagerStateImpl
 		COConfigurationManager.removeParameterListener( "enable.seedingonly.maxuploads", this );
 	}
 	
+	@Override
 	public DownloadManager
 	getDownloadManager()
 	{
@@ -580,6 +616,7 @@ DownloadManagerStateImpl
 		download_manager	= dm;
 	}
 	
+	@Override
 	public File
 	getStateFile( )
 	{
@@ -596,24 +633,28 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	clearTrackerResponseCache()
 	{
 		setTrackerResponseCache( new HashMap());
 	}
 	
+	@Override
 	public Map getTrackerResponseCache() {
 		
 		Map tracker_response_cache = null;
 		
 		tracker_response_cache = torrent.getAdditionalMapProperty(TRACKER_CACHE_KEY);
 		
-		if (tracker_response_cache == null)
+		if (tracker_response_cache == null) {
 			tracker_response_cache = new HashMap();
+		}
 		
 		return (tracker_response_cache);
 	}
 	
+	@Override
 	public void
 	setTrackerResponseCache(
 		Map		value )
@@ -639,6 +680,7 @@ DownloadManagerStateImpl
 		}
 	}
 
+	@Override
 	public Map
 	getResumeData()
 	{
@@ -653,12 +695,14 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	clearResumeData()
 	{
 		setResumeData( null );
 	}
 	
+	@Override
 	public void
 	setResumeData(
 		Map	data )
@@ -695,6 +739,7 @@ DownloadManagerStateImpl
 		save();
 	}
 	
+	@Override
 	public boolean
 	isResumeDataComplete()
 	{
@@ -718,12 +763,14 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public TOTorrent
 	getTorrent()
 	{
 		return( torrent );
 	}
 	
+	@Override
 	public void
 	setActive(
 		boolean		active )
@@ -731,23 +778,28 @@ DownloadManagerStateImpl
 		torrent.setDiscardFluff( !active );
 	}
 	
+	@Override
 	public void discardFluff()
 	{
 		torrent.setDiscardFluff(true);
 	}
 	
+	@Override
 	public void suppressStateSave(boolean suppress) {
-		if(suppress)
+		if(suppress) {
 			supressWrites++;
-		else if(supressWrites > 0)
+		} else if(supressWrites > 0) {
 			supressWrites--;
+		}
 	}
 	
+	@Override
 	public void
 	save()
 	{
-		if(supressWrites > 0)
+		if(supressWrites > 0) {
 			return;
+		}
 			
  		boolean do_write;
 
@@ -756,8 +808,9 @@ DownloadManagerStateImpl
 
 			do_write = write_required;
 
-			if(write_required != false)
+			if(write_required != false) {
 				write_required = false;
+			}
 
 		} finally {
 
@@ -769,9 +822,10 @@ DownloadManagerStateImpl
 			try {
 				// System.out.println( "writing download state for '" + new String(torrent.getName()));
 
-				if (Logger.isEnabled())
+				if (Logger.isEnabled()) {
 					Logger.log(new LogEvent(torrent, LOGID, "Saving state for download '"
 							+ TorrentUtils.getLocalisedName(torrent) + "'"));
+				}
 
 				torrent.setAdditionalMapProperty( ATTRIBUTE_KEY, attributes );
 				
@@ -786,6 +840,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	delete()
 	{
@@ -848,6 +903,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setFlag(
 		long		flag,
@@ -872,6 +928,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public boolean
 	getFlag(
 		long	flag )
@@ -881,16 +938,19 @@ DownloadManagerStateImpl
 		return(( value & flag ) != 0 );
 	}
 	
+	@Override
 	public long 
 	getFlags() 
 	{
 		return( getLongAttribute( AT_FLAGS ));
 	}
 	
+	@Override
 	public boolean parameterExists(String name) {
 		return parameters.containsKey(name);
 	}
 	
+	@Override
 	public void
 	setParameterDefault(
 		String	name )
@@ -920,6 +980,7 @@ DownloadManagerStateImpl
 		setMapAttribute( AT_PARAMETERS, parameters );
 	}
 	
+	@Override
 	public long
 	getLongParameter(
 		String	name )
@@ -1022,6 +1083,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setLongParameter(
 		String		name,
@@ -1052,6 +1114,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public int
 	getIntParameter(
 		String	name )
@@ -1059,6 +1122,7 @@ DownloadManagerStateImpl
 		return( (int)getLongParameter( name ));
 	}
 	
+	@Override
 	public void
 	setIntParameter(
 		String	name,
@@ -1067,6 +1131,7 @@ DownloadManagerStateImpl
 		setLongParameter( name, value );
 	}
 	
+	@Override
 	public boolean
 	getBooleanParameter(
 		String	name )
@@ -1074,6 +1139,7 @@ DownloadManagerStateImpl
 		return( getLongParameter( name ) != 0 );
 	}
 	
+	@Override
 	public void
 	setBooleanParameter(
 		String		name,
@@ -1082,6 +1148,7 @@ DownloadManagerStateImpl
 		setLongParameter( name, value?1:0 );
 	}
 	
+	@Override
 	public void
 	setAttribute(
 		String		name,
@@ -1119,6 +1186,7 @@ DownloadManagerStateImpl
 		setStringAttribute( name, value );
 	}
 	
+	@Override
 	public String
 	getAttribute(
 		String		name )
@@ -1145,6 +1213,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public 
 	Category 
 	getCategory() 
@@ -1152,6 +1221,7 @@ DownloadManagerStateImpl
 	    return category;
 	}
 		
+	@Override
 	public void 
 	setCategory(
 		Category 	cat ) 
@@ -1195,12 +1265,14 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public String
 	getTrackerClientExtensions()
 	{
 		return( getStringAttribute( AT_TRACKER_CLIENT_EXTENSIONS ));
 	}
 	
+	@Override
 	public void
 	setTrackerClientExtensions(
 		String		value )
@@ -1208,28 +1280,34 @@ DownloadManagerStateImpl
 		setStringAttribute( AT_TRACKER_CLIENT_EXTENSIONS, value );
 	}
     
-    public String getDisplayName() {
-    	return this.getStringAttribute(AT_DISPLAY_NAME);
+    @Override
+	public String getDisplayName() {
+    	return getStringAttribute(AT_DISPLAY_NAME);
     }
 	
-    public void setDisplayName(String value) {
-    	this.setStringAttribute(AT_DISPLAY_NAME, value);
+    @Override
+	public void setDisplayName(String value) {
+    	setStringAttribute(AT_DISPLAY_NAME, value);
     }
     
-    public String getUserComment() {
-    	return this.getStringAttribute(AT_USER_COMMENT);
+    @Override
+	public String getUserComment() {
+    	return getStringAttribute(AT_USER_COMMENT);
     }
     
-    public void setUserComment(String value) {
-    	this.setStringAttribute(AT_USER_COMMENT, value);
+    @Override
+	public void setUserComment(String value) {
+    	setStringAttribute(AT_USER_COMMENT, value);
     }
     
-    public String getRelativeSavePath() {
-    	return this.getStringAttribute(AT_RELATIVE_SAVE_PATH);
+    @Override
+	public String getRelativeSavePath() {
+    	return getStringAttribute(AT_RELATIVE_SAVE_PATH);
     }
 	
+	@Override
 	public String getPrimaryFile() {
-		String sPrimary = this.getStringAttribute(AT_PRIMARY_FILE);
+		String sPrimary = getStringAttribute(AT_PRIMARY_FILE);
 		// Only recheck when file doesn't exists if this is the first check
 		// of the session, because the file may never exist and we don't want
 		// to continuously go through the fileinfos
@@ -1272,10 +1350,12 @@ DownloadManagerStateImpl
 	/**
 	 * @param primary
 	 */
+	@Override
 	public void setPrimaryFile(String fileFullPath) {
-		this.setStringAttribute(AT_PRIMARY_FILE, fileFullPath);
+		setStringAttribute(AT_PRIMARY_FILE, fileFullPath);
 	}
 
+	@Override
 	public String[]
 	getNetworks()
 	{
@@ -1307,12 +1387,14 @@ DownloadManagerStateImpl
 		return( x );
 	}
 	
-	  public boolean isNetworkEnabled(
+	  @Override
+	public boolean isNetworkEnabled(
 	      String network) {
 	    List	values = getListAttributeSupport( AT_NETWORKS );
 	    return values.contains(network);
 	  }
 					
+	@Override
 	public void
 	setNetworks(
 		String[]		networks )
@@ -1332,7 +1414,8 @@ DownloadManagerStateImpl
 		setListAttribute( AT_NETWORKS, l );
 	}
 	
-	  public void 
+	  @Override
+	public void 
 	  setNetworkEnabled(
 	      String network,
 	      boolean enabled) {
@@ -1358,6 +1441,7 @@ DownloadManagerStateImpl
 	
 		// peer sources
 	
+	@Override
 	public String[]
 	getPeerSources()
 	{
@@ -1389,6 +1473,7 @@ DownloadManagerStateImpl
 		return( x );
 	}
 	
+	@Override
 	public boolean 
 	isPeerSourceEnabled(
 		String peerSource ) 
@@ -1398,6 +1483,7 @@ DownloadManagerStateImpl
 		return values.contains(peerSource);
 	}
 	
+	@Override
 	public boolean
 	isPeerSourcePermitted(
 		String	peerSource )
@@ -1436,6 +1522,7 @@ DownloadManagerStateImpl
 		return( true );
 	}
   	
+	@Override
 	public void
 	setPeerSourcePermitted(
 		String	peerSource,
@@ -1484,6 +1571,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setPeerSources(
 		String[]		ps )
@@ -1508,7 +1596,8 @@ DownloadManagerStateImpl
 		setListAttribute( AT_PEER_SOURCES, l );
 	}
 	
-	  public void
+	  @Override
+	public void
 	  setPeerSourceEnabled(
 	      String source,
 	      boolean enabled ) 
@@ -1544,6 +1633,7 @@ DownloadManagerStateImpl
 	  // links stuff
 	  
 	
+	@Override
 	public void
 	setFileLink(
 		File	link_source,
@@ -1551,7 +1641,7 @@ DownloadManagerStateImpl
 	{
 		CaseSensitiveFileMap	links = getFileLinks();
 		
-		File	existing = (File)links.get(link_source);
+		File	existing = links.get(link_source);
 		
 		if ( link_destination == null ){
 			
@@ -1573,7 +1663,7 @@ DownloadManagerStateImpl
 		while( it.hasNext()){
 			
 			File	source = (File)it.next();
-			File	target = (File)links.get(source);
+			File	target = links.get(source);
 			
 			String	str = source + "\n" + (target==null?"":target.toString());
 			
@@ -1583,6 +1673,7 @@ DownloadManagerStateImpl
 		setListAttribute( AT_FILE_LINKS, list );
 	}
 	
+	@Override
 	public void
 	clearFileLinks()
 	{
@@ -1597,7 +1688,7 @@ DownloadManagerStateImpl
 		while( it.hasNext()){
 			
 			File	source = (File)it.next();
-			File	target = (File)links.get(source);
+			File	target = links.get(source);
 			
 			if ( target != null ){
 				
@@ -1615,13 +1706,15 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public File
 	getFileLink(
 		File	link_source )
 	{
-		return((File)getFileLinks().get(link_source));
+		return(getFileLinks().get(link_source));
 	}
 					
+	@Override
 	public CaseSensitiveFileMap
 	getFileLinks()
 	{
@@ -1646,6 +1739,7 @@ DownloadManagerStateImpl
 		return( res );
 	}
 	
+	@Override
 	public boolean isOurContent() {
 		// HACK!
 		Map mapAttr = getMapAttribute("Plugin.azdirector.ContentMap");
@@ -1744,6 +1838,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public long
 	getLongAttribute(
 		String	attribute_name )
@@ -1786,6 +1881,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setLongAttribute(
 		final String	attribute_name,
@@ -1818,6 +1914,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setListAttribute(
 		String		name,
@@ -1836,17 +1933,20 @@ DownloadManagerStateImpl
 		setListAttribute( name, list );
 	}
 	
+	@Override
 	public String getListAttribute(String name, int idx) {
-		if (name.equals(AT_NETWORKS) || name.equals(AT_PEER_SOURCES))
+		if (name.equals(AT_NETWORKS) || name.equals(AT_PEER_SOURCES)) {
 			throw new UnsupportedOperationException("not supported right now, implement it yourself :P");
+		}
 		
 		informWillRead(name);
 		
 		try {
 			this_mon.enter();
 			List values = (List) attributes.get(name);
-			if(values == null || idx >= values.size() || idx < 0)
+			if(values == null || idx >= values.size() || idx < 0) {
 				return null;
+			}
 			Object o = values.get(idx);
 			if (o instanceof byte[]) {
 				byte[] bytes = (byte[]) o;
@@ -1856,8 +1956,9 @@ DownloadManagerStateImpl
 				} catch (UnsupportedEncodingException e) {
 					Debug.printStackTrace(e);
 				}
-				if (s != null)
+				if (s != null) {
 					values.set(idx, s);
+				}
 				return s;
 			} else if (o instanceof String) {
 				return (String) o;
@@ -1869,6 +1970,7 @@ DownloadManagerStateImpl
 		return null;
 	}
 	
+	@Override
 	public String[]
 	getListAttribute(
 		String	attribute_name )
@@ -2016,6 +2118,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public Map
 	getMapAttribute(
 		String	attribute_name )
@@ -2035,6 +2138,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	setMapAttribute(
 		final String	attribute_name,
@@ -2100,6 +2204,7 @@ DownloadManagerStateImpl
 		}
 	}
 
+	@Override
 	public boolean 
 	hasAttribute(
 		String name )
@@ -2120,6 +2225,7 @@ DownloadManagerStateImpl
 	
 	// These methods just use long attributes to store data into.
 	
+	@Override
 	public void 
 	setIntAttribute(
 		String 	name, 
@@ -2128,6 +2234,7 @@ DownloadManagerStateImpl
 		setLongAttribute(name, value);
 	}
 	
+	@Override
 	public int 
 	getIntAttribute(
 		String name )
@@ -2135,6 +2242,7 @@ DownloadManagerStateImpl
 		return (int)getLongAttribute(name);
 	}
 	
+	@Override
 	public void 
 	setBooleanAttribute(
 		String 		name, 
@@ -2143,6 +2251,7 @@ DownloadManagerStateImpl
 		setLongAttribute(name, (value ? 1 : 0));
 	}
 	
+	@Override
 	public boolean 
 	getBooleanAttribute(
 		String name ) 
@@ -2171,12 +2280,14 @@ DownloadManagerStateImpl
 					this,
 					new DownloadManagerStateEvent()
 					{
+						@Override
 						public int
 						getType()
 						{
 							return( DownloadManagerStateEvent.ET_ATTRIBUTE_WRITTEN );
 						}
 						
+						@Override
 						public Object
 						getData()
 						{
@@ -2227,12 +2338,14 @@ DownloadManagerStateImpl
 							this,
 							new DownloadManagerStateEvent()
 							{
+								@Override
 								public int
 								getType()
 								{
 									return( DownloadManagerStateEvent.ET_ATTRIBUTE_WILL_BE_READ );
 								}
 								
+								@Override
 								public Object
 								getData()
 								{
@@ -2264,6 +2377,7 @@ DownloadManagerStateImpl
 		}
 	}
 	
+	@Override
 	public void
 	addListener(
 		DownloadManagerStateListener	l )
@@ -2271,6 +2385,7 @@ DownloadManagerStateImpl
 		listeners_cow.add( l );
 	}
 	
+	@Override
 	public void
 	removeListener(
 		DownloadManagerStateListener	l )
@@ -2278,8 +2393,9 @@ DownloadManagerStateImpl
 		listeners_cow.remove(l);
 	}
 	
+	@Override
 	public void addListener(DownloadManagerStateAttributeListener l, String attribute, int event_type) {
-		CopyOnWriteMap map_to_use = (event_type == DownloadManagerStateAttributeListener.WILL_BE_READ) ? this.listeners_read_map_cow : this.listeners_write_map_cow;
+		CopyOnWriteMap map_to_use = (event_type == DownloadManagerStateAttributeListener.WILL_BE_READ) ? listeners_read_map_cow : listeners_write_map_cow;
 		CopyOnWriteList lst = (CopyOnWriteList)map_to_use.get(attribute);
 		if (lst == null) {
 			lst = new CopyOnWriteList();
@@ -2288,12 +2404,14 @@ DownloadManagerStateImpl
 		lst.add(l);
 	}
 
+	@Override
 	public void removeListener(DownloadManagerStateAttributeListener l, String attribute, int event_type) {
-		CopyOnWriteMap map_to_use = (event_type == DownloadManagerStateAttributeListener.WILL_BE_READ) ? this.listeners_read_map_cow : this.listeners_write_map_cow;
+		CopyOnWriteMap map_to_use = (event_type == DownloadManagerStateAttributeListener.WILL_BE_READ) ? listeners_read_map_cow : listeners_write_map_cow;
 		CopyOnWriteList lst = (CopyOnWriteList)map_to_use.get(attribute);
 		if (lst != null) {lst.remove(l);}
 	}
 	
+	@Override
 	public void 
 	generateEvidence(
 		IndentWriter writer) 
@@ -2327,64 +2445,75 @@ DownloadManagerStateImpl
 			download_manager = _dm;
 		}
 		
+		@Override
 		public TOTorrent
 		getTorrent()
 		{
 			return( null );
 		}
 		
+		@Override
 		public File
 		getStateFile( )
 		{
 			return( null );
 		}
 		
+		@Override
 		public DownloadManager
 		getDownloadManager()
 		{
 			return( download_manager );
 		}
 		
+		@Override
 		public void
 		clearResumeData()
 		{
 		}
 		
+		@Override
 		public Map
 		getResumeData()
 		{
 			return( new HashMap());
 		}
 		
+		@Override
 		public void
 		setResumeData(
 			Map	data )
 		{
 		}
 		
+		@Override
 		public boolean
 		isResumeDataComplete()
 		{
 			return( false );
 		}
 		
+		@Override
 		public void
 		clearTrackerResponseCache()
 		{
 		}
 		
+		@Override
 		public Map
 		getTrackerResponseCache()
 		{
 			return( new HashMap());
 		}
 
+		@Override
 		public void
 		setTrackerResponseCache(
 			Map		value )
 		{
 		}
 		
+		@Override
 		public void
 		setFlag(
 			long		flag,
@@ -2392,6 +2521,7 @@ DownloadManagerStateImpl
 		{
 		}
 		
+		@Override
 		public boolean
 		getFlag(
 			long		flag )
@@ -2399,18 +2529,21 @@ DownloadManagerStateImpl
 			return( false );
 		}
 		
+		@Override
 		public long 
 		getFlags() 
 		{
 			return 0;
 		}
 		
+		@Override
 		public void
 		setParameterDefault(
 			String	name )
 		{
 		}
 		
+		@Override
 		public long
 		getLongParameter(
 			String	name )
@@ -2418,6 +2551,7 @@ DownloadManagerStateImpl
 			return( 0 );
 		}
 		
+		@Override
 		public void
 		setLongParameter(
 			String	name,
@@ -2425,6 +2559,7 @@ DownloadManagerStateImpl
 		{
 		}
 		
+		@Override
 		public int
 		getIntParameter(
 			String	name )
@@ -2432,6 +2567,7 @@ DownloadManagerStateImpl
 			return( 0 );
 		}
 		
+		@Override
 		public void
 		setIntParameter(
 			String	name,
@@ -2439,6 +2575,7 @@ DownloadManagerStateImpl
 		{	
 		}
 		
+		@Override
 		public boolean
 		getBooleanParameter(
 			String	name )
@@ -2446,6 +2583,7 @@ DownloadManagerStateImpl
 			return( false );
 		}
 		
+		@Override
 		public void
 		setBooleanParameter(
 			String		name,
@@ -2453,6 +2591,7 @@ DownloadManagerStateImpl
 		{
 		}
 		
+		@Override
 		public void
 		setAttribute(
 			String		name,
@@ -2460,6 +2599,7 @@ DownloadManagerStateImpl
 		{
 		}			
 		
+		@Override
 		public String
 		getAttribute(
 			String		name )
@@ -2467,18 +2607,21 @@ DownloadManagerStateImpl
 			return( null );
 		}
 		
+		@Override
 		public String
 		getTrackerClientExtensions()
 		{
 			return( null );
 		}
 		
+		@Override
 		public void
 		setTrackerClientExtensions(
 			String		value )
 		{
 		}
 		
+		@Override
 		public void
 		setListAttribute(
 			String		name,
@@ -2487,10 +2630,12 @@ DownloadManagerStateImpl
 		}
 		
 
+		@Override
 		public String getListAttribute(String name, int idx) {
 			return null;
 		}
 		
+		@Override
 		public String[]
 		getListAttribute(
 			String	name )
@@ -2498,6 +2643,7 @@ DownloadManagerStateImpl
 			return( null );
 		}
 		
+		@Override
 		public void
 		setMapAttribute(
 			String		name,
@@ -2505,6 +2651,7 @@ DownloadManagerStateImpl
 		{
 		}
 		
+		@Override
 		public Map
 		getMapAttribute(
 			String		name )
@@ -2512,26 +2659,36 @@ DownloadManagerStateImpl
 			return( null );
 		}
 		
+		@Override
 		public boolean hasAttribute(String name) {return false;}
+		@Override
 		public int getIntAttribute(String name) {return 0;}
+		@Override
 		public long getLongAttribute(String name) {return 0L;}
+		@Override
 		public boolean getBooleanAttribute(String name) {return false;}
+		@Override
 		public void setIntAttribute(String name, int value) {}
+		@Override
 		public void setLongAttribute(String name, long value) {}
+		@Override
 		public void setBooleanAttribute(String name, boolean value) {}
 		
+		@Override
 		public Category 
 		getCategory()
 		{
 			return( null );
 		}
 		
+		@Override
 		public void 
 		setCategory(
 			Category cat )
 		{
 		}
 		
+		@Override
 		public String[]		
 		getNetworks()
 		{
@@ -2539,10 +2696,12 @@ DownloadManagerStateImpl
 		}
 		
 		
-	    public boolean isNetworkEnabled(String network) {	      
+	    @Override
+		public boolean isNetworkEnabled(String network) {	      
 	      return false;
 	    }
 						
+		@Override
 		public void
 		setNetworks(
 			String[]		networks )
@@ -2550,16 +2709,19 @@ DownloadManagerStateImpl
 		}
 		
 
-	    public void setNetworkEnabled(
+	    @Override
+		public void setNetworkEnabled(
 	        String network,
 	        boolean enabled) {	      
 	    }
 		
+		@Override
 		public String[]		
 		getPeerSources()
 		{
 			return( new String[0] );
 		}
+		@Override
 		public boolean
 		isPeerSourcePermitted(
 			String	peerSource )
@@ -2567,17 +2729,21 @@ DownloadManagerStateImpl
 			return( false );
 		}
 		
+		@Override
 		public void setPeerSourcePermitted(String peerSource, boolean permitted) {			
 		}
 		
-	    public boolean
+	    @Override
+		public boolean
 	    isPeerSourceEnabled(
 	        String peerSource) {
 	      return false;
 	    }
 	    
-	    public void suppressStateSave(boolean suppress) {}
+	    @Override
+		public void suppressStateSave(boolean suppress) {}
 		
+		@Override
 		public void
 		setPeerSources(
 			String[]		networks )
@@ -2585,23 +2751,27 @@ DownloadManagerStateImpl
 		}
 		
 
-	    public void
+	    @Override
+		public void
 	    setPeerSourceEnabled(
 	        String source,
 	        boolean enabled) {
 	    }
 		
-	    public void
+	    @Override
+		public void
 		setFileLink(
 			File	link_source,
 			File	link_destination )
 	    {
 	    }
+		@Override
 		public void
 		clearFileLinks()
 		{
 		}
 		
+		@Override
 		public File
 		getFileLink(
 			File	link_source )
@@ -2609,56 +2779,72 @@ DownloadManagerStateImpl
 			return( null );
 		}
 		
+		@Override
 		public CaseSensitiveFileMap
 		getFileLinks()
 		{
 			return( new CaseSensitiveFileMap());
 		}
 		
+		@Override
 		public void 
 		setActive(boolean active )
 		{
 		}
 		
+		@Override
 		public void discardFluff() {}
 		
+		@Override
 		public void
 		save()
 		{	
 		}
 		
+		@Override
 		public void
 		delete()
 		{
 		}
 		
+		@Override
 		public void
 		addListener(
 			DownloadManagerStateListener	l )
 		{}
 		
+		@Override
 		public void
 		removeListener(
 			DownloadManagerStateListener	l )
 		{}
 		
+		@Override
 		public void addListener(DownloadManagerStateAttributeListener l, String attribute, int event_type) {}
+		@Override
 		public void removeListener(DownloadManagerStateAttributeListener l, String attribute, int event_type) {}
 		
-        public void setDisplayName(String name) {}
-        public String getDisplayName() {return null;}
+        @Override
+		public void setDisplayName(String name) {}
+        @Override
+		public String getDisplayName() {return null;}
 
-        public void setUserComment(String name) {}
-        public String getUserComment() {return null;}
+        @Override
+		public void setUserComment(String name) {}
+        @Override
+		public String getUserComment() {return null;}
 
         public void setRelativeSavePath(String name) {}
-        public String getRelativeSavePath() {return null;}
+        @Override
+		public String getRelativeSavePath() {return null;}
         
+		@Override
 		public boolean parameterExists(String name) {
 			// TODO Auto-generated method stub
 			return false;
 		}
 		
+		@Override
 		public void 
 		generateEvidence(
 			IndentWriter writer) 
@@ -2666,6 +2852,7 @@ DownloadManagerStateImpl
 			writer.println( "DownloadManagerState: broken torrent" );
 		}
 
+		@Override
 		public boolean isOurContent() {
 			// TODO Auto-generated method stub
 			return false;
@@ -2673,6 +2860,7 @@ DownloadManagerStateImpl
 
 		// @see org.gudy.azureus2.core3.download.DownloadManagerState#getPrimaryFile()
 		
+		@Override
 		public String getPrimaryFile() {
 			// TODO Auto-generated method stub
 			return null;
@@ -2680,6 +2868,7 @@ DownloadManagerStateImpl
 
 		// @see org.gudy.azureus2.core3.download.DownloadManagerState#setPrimaryFile(java.lang.String)
 		
+		@Override
 		public void setPrimaryFile(String relativeFile) {
 			// TODO Auto-generated method stub
 			
@@ -2911,6 +3100,7 @@ DownloadManagerStateImpl
 				}
 			}
 			
+			@Override
 			public TOTorrentAnnounceURLSet[]
            	getAnnounceURLSets()
 			{
@@ -2944,7 +3134,8 @@ DownloadManagerStateImpl
 				}
 			}
            	
-           	public void
+           	@Override
+			public void
            	setAnnounceURLSets(
            		TOTorrentAnnounceURLSet[]	toSet )
            	{
@@ -2971,7 +3162,8 @@ DownloadManagerStateImpl
     			}
            	}
            		
-           	public TOTorrentAnnounceURLSet
+           	@Override
+			public TOTorrentAnnounceURLSet
            	createAnnounceURLSet(
            		URL[]	urls )
            	{
@@ -2995,7 +3187,8 @@ DownloadManagerStateImpl
 					this.urls = urls;
 				}
            		
-           		public URL[]
+           		@Override
+				public URL[]
            		getAnnounceURLs()
            		{
            			if ( announce_group == null && fixup() && delegateSet != null ){
@@ -3006,7 +3199,8 @@ DownloadManagerStateImpl
            			return( urls );
            		}
            		    	
-		    	public void
+		    	@Override
+				public void
 		    	setAnnounceURLs(
 		    		URL[]		toSet )
 		    	{
@@ -3175,6 +3369,7 @@ DownloadManagerStateImpl
 		}
 		
 		
+		@Override
 		public byte[]
     	getName()
 		{
@@ -3198,6 +3393,7 @@ DownloadManagerStateImpl
 	   		return(("Error - " + Debug.getNestedExceptionMessage( fixup_failure )).getBytes());
     	}
 
+		@Override
 		public String getUTF8Name() {
 			Map	c = cache;
 			
@@ -3224,7 +3420,8 @@ DownloadManagerStateImpl
 			return null;
 		}
 
-    	public boolean
+    	@Override
+		public boolean
     	isSimpleTorrent()
     	{
     		if ( simple_torrent != null ){
@@ -3244,7 +3441,8 @@ DownloadManagerStateImpl
     		return( false );
     	}
     	
-    	public byte[]
+    	@Override
+		public byte[]
     	getComment()
     	{
 			Map	c = cache;
@@ -3262,7 +3460,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
 
-    	public void
+    	@Override
+		public void
     	setComment(
     		String		comment )
        	{
@@ -3272,7 +3471,8 @@ DownloadManagerStateImpl
 			}
     	}
  
-    	public long
+    	@Override
+		public long
     	getCreationDate()
        	{
 	   		if ( fixup()){
@@ -3283,7 +3483,8 @@ DownloadManagerStateImpl
 	   		return( 0 );
     	}
     	
-    	public void
+    	@Override
+		public void
     	setCreationDate(
     		long		date )
        	{
@@ -3293,7 +3494,8 @@ DownloadManagerStateImpl
 			}
     	}
     	
-    	public byte[]
+    	@Override
+		public byte[]
     	getCreatedBy()
        	{
 			Map	c = cache;
@@ -3311,7 +3513,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     	
-       	public void
+       	@Override
+		public void
     	setCreatedBy(
     		byte[]		cb )
        	{
@@ -3321,7 +3524,8 @@ DownloadManagerStateImpl
 			}
     	}
        	
-    	public boolean
+    	@Override
+		public boolean
     	isCreated()
        	{
 	   		if ( fixup()){
@@ -3332,7 +3536,8 @@ DownloadManagerStateImpl
 	   		return( false );
     	}
     	
-    	public URL
+    	@Override
+		public URL
     	getAnnounceURL()
        	{
     		if ( announce_url != null ){
@@ -3348,7 +3553,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
 
-    	public boolean
+    	@Override
+		public boolean
     	setAnnounceURL(
     		URL		url )
        	{
@@ -3356,14 +3562,16 @@ DownloadManagerStateImpl
     		
 	   		if ( fixup()){
 				return( delegate.setAnnounceURL( url ));
-			} else
+			} else {
 				announce_url = url;
+			}
 				
 	   		
 	   		return( false );
     	}
     	
-    	public TOTorrentAnnounceURLGroup
+    	@Override
+		public TOTorrentAnnounceURLGroup
     	getAnnounceURLGroup()
        	{
     		if ( announce_group != null ){
@@ -3379,7 +3587,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     	 
-    	public byte[][]
+    	@Override
+		public byte[][]
     	getPieces()
     	
     		throws TOTorrentException
@@ -3393,7 +3602,8 @@ DownloadManagerStateImpl
     	}
     	
 
-    	public void
+    	@Override
+		public void
     	setPieces(
     		byte[][]	pieces )
     	
@@ -3409,7 +3619,8 @@ DownloadManagerStateImpl
 	   		throw( fixup_failure );
     	}
     	
-    	public byte[][]
+    	@Override
+		public byte[][]
     	peekPieces()
     	
     		throws TOTorrentException
@@ -3422,7 +3633,8 @@ DownloadManagerStateImpl
 	   		throw( fixup_failure );
     	}
     	
-    	public void 
+    	@Override
+		public void 
     	setDiscardFluff(
     		boolean discard )
     	{
@@ -3434,7 +3646,8 @@ DownloadManagerStateImpl
     		}
      	}
     	
-    	public long
+    	@Override
+		public long
     	getPieceLength()
        	{
 	   		if ( fixup()){
@@ -3445,6 +3658,7 @@ DownloadManagerStateImpl
 	   		return( 0 );
        	}
 
+		@Override
 		public int
     	getNumberOfPieces()
        	{
@@ -3456,7 +3670,8 @@ DownloadManagerStateImpl
 	   		return( 0 );
     	}
     	
-    	public long
+    	@Override
+		public long
     	getSize()
        	{
     		if ( size > 0 ){
@@ -3474,7 +3689,8 @@ DownloadManagerStateImpl
 	   		return( 0 );
     	}
     	
-    	public TOTorrentFile[]
+    	@Override
+		public TOTorrentFile[]
     	getFiles()
        	{
 	   		if ( fixup()){
@@ -3485,7 +3701,8 @@ DownloadManagerStateImpl
 	   		return( new TOTorrentFile[0] );
     	}
     	 
-    	public byte[]
+    	@Override
+		public byte[]
     	getHash()
     				
     		throws TOTorrentException
@@ -3495,7 +3712,8 @@ DownloadManagerStateImpl
     		return( torrent_hash_wrapper.getBytes());
     	}
     	
-    	public HashWrapper
+    	@Override
+		public HashWrapper
     	getHashWrapper()
     				
     		throws TOTorrentException
@@ -3503,7 +3721,8 @@ DownloadManagerStateImpl
     		return( torrent_hash_wrapper );
     	}
 
-    	public void 
+    	@Override
+		public void 
     	setHashOverride(
     		byte[] hash ) 
     	
@@ -3512,7 +3731,8 @@ DownloadManagerStateImpl
     		throw( new TOTorrentException( "Not supported", TOTorrentException.RT_HASH_FAILS ));
     	}
     	
-    	public boolean
+    	@Override
+		public boolean
     	hasSameHashAs(
     		TOTorrent		other )
        	{
@@ -3529,7 +3749,8 @@ DownloadManagerStateImpl
     		}
        	}
     	
-    	public boolean
+    	@Override
+		public boolean
     	getPrivate()
        	{
 	   		if ( fixup()){
@@ -3540,7 +3761,8 @@ DownloadManagerStateImpl
 	   		return( false );
     	}
     	
-    	public void
+    	@Override
+		public void
     	setPrivate(
     		boolean	_private )
     	
@@ -3552,7 +3774,8 @@ DownloadManagerStateImpl
     			}
         	}
   
-    	public void
+    	@Override
+		public void
     	setAdditionalStringProperty(
     		String		name,
     		String		value )
@@ -3563,7 +3786,8 @@ DownloadManagerStateImpl
 			}
     	}
     		
-    	public String
+    	@Override
+		public String
     	getAdditionalStringProperty(
     		String		name )
        	{
@@ -3597,7 +3821,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     		
-    	public void
+    	@Override
+		public void
     	setAdditionalByteArrayProperty(
     		String		name,
     		byte[]		value )
@@ -3608,7 +3833,8 @@ DownloadManagerStateImpl
 			}
     	}
     	
-    	public byte[]
+    	@Override
+		public byte[]
     	getAdditionalByteArrayProperty(
     		String		name )
        	{
@@ -3620,7 +3846,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     	
-    	public void
+    	@Override
+		public void
     	setAdditionalLongProperty(
     		String		name,
     		Long		value )
@@ -3631,7 +3858,8 @@ DownloadManagerStateImpl
 			}
     	}
     		
-    	public Long
+    	@Override
+		public Long
     	getAdditionalLongProperty(
     		String		name )
        	{
@@ -3644,7 +3872,8 @@ DownloadManagerStateImpl
     	}
     		
     	
-    	public void
+    	@Override
+		public void
     	setAdditionalListProperty(
     		String		name,
     		List		value )
@@ -3655,7 +3884,8 @@ DownloadManagerStateImpl
 			}
     	}
     		
-    	public List
+    	@Override
+		public List
     	getAdditionalListProperty(
     		String		name )
        	{
@@ -3667,7 +3897,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     		
-    	public void
+    	@Override
+		public void
     	setAdditionalMapProperty(
     		String		name,
     		Map			value )
@@ -3678,7 +3909,8 @@ DownloadManagerStateImpl
 			}
     	}
     		
-    	public Map
+    	@Override
+		public Map
     	getAdditionalMapProperty(
     		String		name )
        	{
@@ -3704,7 +3936,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     	
-    	public Object
+    	@Override
+		public Object
     	getAdditionalProperty(
     		String		name )
        	{
@@ -3716,7 +3949,8 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
 
-    	public void
+    	@Override
+		public void
     	setAdditionalProperty(
     		String		name,
     		Object		value )
@@ -3727,7 +3961,8 @@ DownloadManagerStateImpl
 			}
     	}
     	
-    	public void
+    	@Override
+		public void
     	removeAdditionalProperty(
     		String name )
        	{
@@ -3737,7 +3972,8 @@ DownloadManagerStateImpl
 			}
     	}
     	
-    	public void
+    	@Override
+		public void
     	removeAdditionalProperties()
        	{
 	   		if ( fixup()){
@@ -3746,7 +3982,8 @@ DownloadManagerStateImpl
 			}
     	}
     	
-    	public void
+    	@Override
+		public void
     	serialiseToBEncodedFile(
     		File		file )
     		  
@@ -3762,7 +3999,8 @@ DownloadManagerStateImpl
 	   		throw( fixup_failure );
     	}
     	
-    	public Map
+    	@Override
+		public Map
     	serialiseToMap()
     		  
     		throws TOTorrentException
@@ -3775,7 +4013,8 @@ DownloadManagerStateImpl
 	   		throw( fixup_failure );
     	}
     	
-       public void
+       @Override
+	public void
        serialiseToXMLFile(
     	   File		file )
     		  
@@ -3791,7 +4030,8 @@ DownloadManagerStateImpl
    	   		throw( fixup_failure );
        	}
 
-       public void
+       @Override
+	public void
        addListener(
     	  TOTorrentListener		l )
        {
@@ -3801,7 +4041,8 @@ DownloadManagerStateImpl
     	   }
        }
        
-       public void
+       @Override
+	public void
        removeListener(
     	  TOTorrentListener		l )
        {
@@ -3811,7 +4052,8 @@ DownloadManagerStateImpl
     	   }
        }
        
-       public AEMonitor
+       @Override
+	public AEMonitor
        getMonitor()
       	{
 	   		if ( fixup()){
@@ -3851,5 +4093,24 @@ DownloadManagerStateImpl
 
      		return null;
      	}
+
+		@Override
+		public void setStartTime(long _start_date) {
+	   		if ( fixup()){
+				
+				delegate.setStartTime( _start_date );
+			}
+			
+		}
+
+		@Override
+		public long getStartTime() {
+	   		if ( fixup()){
+				
+				return( delegate.getStartTime());
+			}
+	   		
+	   		return( 0 );
+		}
 	}
 }

@@ -26,13 +26,26 @@ package org.gudy.azureus2.core3.tracker.host.impl;
  *
  */
 
-import java.util.*;
-import java.net.*;
-import java.io.*;
+import java.io.File;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.internat.*;
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
+import org.gudy.azureus2.core3.internat.LocaleUtilEncodingException;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.TOTorrentListener;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.HashWrapper;
 
 public class 
 TRHostExternalTorrent 
@@ -67,17 +80,20 @@ TRHostExternalTorrent
 		}
 	}
 	
+	@Override
 	public byte[]
 	getName()
 	{
 		return( name );
 	}
 	
+	@Override
 	public String getUTF8Name() {
 		return null;
 	}
 
 	
+	@Override
 	public boolean
 	isSimpleTorrent()
 	{
@@ -85,12 +101,14 @@ TRHostExternalTorrent
 	}
 	
 
+	@Override
 	public byte[]
 	getComment()
 	{
 		return( null );
 	}
 
+	@Override
 	public void
 	setComment(
 		String		comment )
@@ -98,42 +116,49 @@ TRHostExternalTorrent
 	}
 	
 	
+	@Override
 	public long
 	getCreationDate()
 	{
 		return(0);
 	}
 	
+	@Override
 	public void
 	setCreationDate(
 		long		date )
 	{
 	}
 	
+	@Override
 	public byte[]
 	getCreatedBy()
 	{
 		return( null );
 	}
 	
- 	public void
+ 	@Override
+	public void
 	setCreatedBy(
 		byte[]		cb )
    	{
    	}
  	
+	@Override
 	public boolean
 	isCreated()
 	{
 		return( false );
 	}
 	
+	@Override
 	public URL
 	getAnnounceURL()
 	{
 		return( announce_url );
 	}
 
+	@Override
 	public boolean
 	setAnnounceURL(
 		URL		url )
@@ -141,37 +166,43 @@ TRHostExternalTorrent
 		return false;
 	}
 		
+	@Override
 	public TOTorrentAnnounceURLGroup
 	getAnnounceURLGroup()
 	{
 		return( 
 			new TOTorrentAnnounceURLGroup()
 			{
+				@Override
 				public TOTorrentAnnounceURLSet[]
                	getAnnounceURLSets()
 				{
 					return( new TOTorrentAnnounceURLSet[0] );
 				}
  
-               	public void
+               	@Override
+				public void
                	setAnnounceURLSets(
                		TOTorrentAnnounceURLSet[]	sets )
 				{
 				}
                		
-               	public TOTorrentAnnounceURLSet
+               	@Override
+				public TOTorrentAnnounceURLSet
                	createAnnounceURLSet(
                		URL[]	urls )
 				{
 					return( new TOTorrentAnnounceURLSet()
 							{
+								@Override
 								public URL[]
 						       	getAnnounceURLs()
 								{
 									return( new URL[0]);
 								}
 						       	
-						       	public void
+						       	@Override
+								public void
 						       	setAnnounceURLs(
 						       		URL[]		urls )
 								{
@@ -188,30 +219,35 @@ TRHostExternalTorrent
 	}
   
 	
+	@Override
 	public byte[][]
 	getPieces()
 	{
 		return( new byte[0][] );
 	}
 
+	@Override
 	public void
 	setPieces(
 		byte[][]	b )
 	{
 	}
 	
+	@Override
 	public int
 	getNumberOfPieces()
 	{
 		return( 0);
 	}
 
+	@Override
 	public long
 	getPieceLength()
 	{
 		return( -1 );
 	}
 
+	@Override
 	public long
 	getSize()
 	{
@@ -219,12 +255,14 @@ TRHostExternalTorrent
 	}
 	
 
+	@Override
 	public TOTorrentFile[]
 	getFiles()
 	{
 		return( new TOTorrentFile[0]);
 	}
 	 
+	@Override
 	public byte[]
 	getHash()
 	
@@ -233,6 +271,7 @@ TRHostExternalTorrent
 		return( hash );
 	}
 	
+	@Override
 	public HashWrapper
 	getHashWrapper()
 
@@ -241,7 +280,8 @@ TRHostExternalTorrent
 		return( hash_wrapper );
 	}
 	
-   	public void 
+   	@Override
+	public void 
 	setHashOverride(
 		byte[] hash ) 
 	
@@ -250,12 +290,14 @@ TRHostExternalTorrent
 		throw( new TOTorrentException( "Not supported", TOTorrentException.RT_HASH_FAILS ));
 	}
    	
+	@Override
 	public boolean
 	getPrivate()
 	{
 		return( false );
 	}
 	
+	@Override
 	public void
 	setPrivate(
 		boolean	_private )
@@ -264,6 +306,7 @@ TRHostExternalTorrent
 	{
 	}
 	
+	@Override
 	public boolean
 	hasSameHashAs(
 		TOTorrent		other )
@@ -281,6 +324,7 @@ TRHostExternalTorrent
 		}
 	}
 	
+	@Override
 	public void
 	setAdditionalStringProperty(
 		String		name,
@@ -296,6 +340,7 @@ TRHostExternalTorrent
 		}
 	}
 		
+	@Override
 	public String
 	getAdditionalStringProperty(
 		String		name )
@@ -325,6 +370,7 @@ TRHostExternalTorrent
 		}
 	}
 		
+	@Override
 	public void
 	setAdditionalByteArrayProperty(
 		String		name,
@@ -333,6 +379,7 @@ TRHostExternalTorrent
 		additional_properties.put(name,value);
 	}
 		
+	@Override
 	public byte[]
 	getAdditionalByteArrayProperty(
 		String		name )
@@ -340,6 +387,7 @@ TRHostExternalTorrent
 		return( (byte[])additional_properties.get(name));
 	}
 	
+	@Override
 	public void
 	setAdditionalLongProperty(
 		String		name,
@@ -348,6 +396,7 @@ TRHostExternalTorrent
 		additional_properties.put(name,value);
 	}
 		
+	@Override
 	public void
 	setAdditionalProperty(
 		String		name,
@@ -363,6 +412,7 @@ TRHostExternalTorrent
 		}
 	}
 	
+	@Override
 	public Long
 	getAdditionalLongProperty(
 		String		name )
@@ -371,6 +421,7 @@ TRHostExternalTorrent
 	}
 		
 	
+	@Override
 	public void
 	setAdditionalListProperty(
 		String		name,
@@ -379,6 +430,7 @@ TRHostExternalTorrent
 		additional_properties.put(name,value);
 	}
 		
+	@Override
 	public List
 	getAdditionalListProperty(
 		String		name )
@@ -386,6 +438,7 @@ TRHostExternalTorrent
 		return((List)additional_properties.get(name));
 	}
 		
+	@Override
 	public void
 	setAdditionalMapProperty(
 		String	name,
@@ -394,6 +447,7 @@ TRHostExternalTorrent
 		additional_properties.put(name,value);
 	}
 		
+	@Override
 	public Map
 	getAdditionalMapProperty(
 		String		name )
@@ -401,6 +455,7 @@ TRHostExternalTorrent
 		return( (Map)additional_properties.get(name));
 	}
 		
+	@Override
 	public Object
 	getAdditionalProperty(
 		String		name )
@@ -408,6 +463,7 @@ TRHostExternalTorrent
 		return( additional_properties.get(name));
 	}
 	
+	@Override
 	public void
 	removeAdditionalProperty(
 		String name )
@@ -415,12 +471,14 @@ TRHostExternalTorrent
 		additional_properties.remove( name );
 	}
 
+	@Override
 	public void
 	removeAdditionalProperties()
 	{
 		additional_properties.clear();
 	}
 	
+	@Override
 	public void
 	serialiseToBEncodedFile(
 		File		file )
@@ -431,6 +489,7 @@ TRHostExternalTorrent
 	}
 
 
+	@Override
 	public Map
 	serialiseToMap()
 		  
@@ -439,7 +498,8 @@ TRHostExternalTorrent
 		throw( new TOTorrentException("External Torrent", TOTorrentException.RT_WRITE_FAILS ));
 	}
 
-   public void
+   @Override
+public void
    serialiseToXMLFile(
 	   File		file )
 		  
@@ -448,26 +508,42 @@ TRHostExternalTorrent
 		throw( new TOTorrentException("External Torrent", TOTorrentException.RT_WRITE_FAILS ));
 	}
 
- 	public void
+ 	@Override
+	public void
 	addListener(
 		TOTorrentListener		l )
 	{
 	}
 
+	@Override
 	public void
 	removeListener(
 		TOTorrentListener		l )
 	{
 	}
 	
-   	public AEMonitor
+   	@Override
+	public AEMonitor
 	getMonitor()
    	{
    		return( this_mon );
    	}
    	
+	@Override
 	public void
 	print()
 	{
+	}
+
+	@Override
+	public void setStartTime(long _start_date) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public long getStartTime() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }
