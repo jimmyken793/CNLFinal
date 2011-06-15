@@ -1533,10 +1533,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  if(start_time_str != NULL &&atoi(start_time_str)==0){
-    fprintf(stderr, "buildtorrent: start time is invalid\n");
-    return 1;
-  }
   if(video_length_str != NULL &&atoi(video_length_str)==0){
     fprintf(stderr, "buildtorrent: video length is invalid\n");
     return 1;
@@ -1778,7 +1774,14 @@ int main(int argc, char **argv) {
     }
   }
   if (start_time_str != NULL) {
-    start_time = bt_integer(atoi(start_time_str));
+    time_t rawtime;
+    struct tm *start_time_tm = (struct tm *) malloc( sizeof(struct tm));//localtime ( &rawtime );;
+    sscanf(start_time_str, "%d/%d/%d-%d:%d", &start_time_tm->tm_year, &start_time_tm->tm_mon, &start_time_tm->tm_mday, &start_time_tm->tm_hour, &start_time_tm->tm_min);
+    start_time_tm->tm_year-=1900;
+    start_time_tm->tm_mon-=1;
+    rawtime=mktime(start_time_tm);
+    start_time = bt_integer((unsigned int)rawtime);
+    fprintf(stderr, "%d/%d/%d-%d:%d\n%d", start_time_tm->tm_year, start_time_tm->tm_mon, start_time_tm->tm_mday, start_time_tm->tm_hour, start_time_tm->tm_min, mktime(start_time_tm));
     if(bt_dictionary_insert(torrent, strlen("start time"), "start time", start_time)){
       fprintf(stderr, "buildtorrent: couldn't insert start time into torrent\n");
       return 1;

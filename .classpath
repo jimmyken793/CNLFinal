@@ -2,10 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="azureus3/src"/>
 	<classpathentry kind="src" path="azureus2/src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="uis/lib/commons-cli.jar"/>
 	<classpathentry kind="lib" path="uis/lib/junit.jar"/>
 	<classpathentry kind="lib" path="uis/lib/log4j.jar"/>
-	<classpathentry kind="lib" path="lib/swt-3.6.2-win64.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/usr/lib/java/swt-gtk-3.6.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

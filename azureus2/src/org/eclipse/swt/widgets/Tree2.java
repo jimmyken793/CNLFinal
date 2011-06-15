@@ -44,6 +44,7 @@ public class Tree2
 		super(parent, style);
 	}
 
+	@Override
 	protected void checkSubclass() {
 		// skip check
 	}
@@ -51,7 +52,7 @@ public class Tree2
 	// @see org.eclipse.swt.widgets.Tree#createHandle()
 	void createHandle() {
 		// lucky for us, other platforms have a super.createHandle too
-		super.createHandle();
+		super.createHandle(0);
 		//if (explorerTheme) {
 		//	int bits2 = (int)/*64*/OS.SendMessage (handle, OS.TVM_GETEXTENDEDSTYLE, 0, 0);
 		//	bits2 &= ~OS.TVS_EX_FADEINOUTEXPANDOS;

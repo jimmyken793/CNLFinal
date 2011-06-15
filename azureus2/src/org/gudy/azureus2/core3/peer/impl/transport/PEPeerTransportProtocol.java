@@ -20,6 +20,8 @@
  */
 package org.gudy.azureus2.core3.peer.impl.transport;
 
+import idv.jomican.streaming.StreamingUtils;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -583,14 +585,8 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 
 		udp_non_data_port = UDPNetworkManager.getSingleton().getUDPNonDataListeningPortNumber();
 
-		peer_item_identity = PeerItemFactory.createPeerItem(ip, tcp_listen_port, PeerItem.convertSourceID(_peer_source), PeerItemFactory.HANDSHAKE_TYPE_PLAIN, _udp_port, crypto_level, 0); // this
-																																															// will
-																																															// be
-																																															// recreated
-																																															// upon
-																																															// az
-																																															// handshake
-																																															// decode
+		peer_item_identity = PeerItemFactory.createPeerItem(ip, tcp_listen_port, PeerItem.convertSourceID(_peer_source), PeerItemFactory.HANDSHAKE_TYPE_PLAIN, _udp_port, crypto_level, 0);
+		// this will be recreated upon az handshake decode
 
 		incoming = false;
 
@@ -1175,41 +1171,12 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 			DiskManagerPiece[] dmPieces = diskManager.getPieces();
 			boolean couldBeSeed = true;
 
-			if (!manager.isSeeding() && (relativeSeeding & RELATIVE_SEEDING_UPLOAD_ONLY_INDICATED) != 0) { /*
-																											 * peer
-																											 * indicated
-																											 * upload
-																											 * -
-																											 * only
-																											 * ,
-																											 * check
-																											 * if
-																											 * we
-																											 * can
-																											 * use
-																											 * any
-																											 * of
-																											 * the
-																											 * data
-																											 * ,
-																											 * otherwise
-																											 * flag
-																											 * as
-																											 * relative
-																											 * seed
-																											 * .
-																											 * Useful
-																											 * to
-																											 * disconnect
-																											 * not
-																											 * -
-																											 * useful
-																											 * pseudo
-																											 * -
-																											 * seeds
-																											 * during
-																											 * downloading
-																											 */
+			if (!manager.isSeeding() && (relativeSeeding & RELATIVE_SEEDING_UPLOAD_ONLY_INDICATED) != 0) {
+				/*
+				 * ' peer indicated upload - only , check if we can use any of
+				 * the data , otherwise flag as relative seed . Useful to
+				 * disconnect not - useful pseudo - seeds during downloading
+				 */
 				for (int i = peerHavePieces.start; i <= peerHavePieces.end; i++) {
 					// relative seed if peer doesn't have the piece, we already
 					// have it or we don't need it
@@ -1218,25 +1185,9 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 						break;
 					}
 				}
-			} else if (manager.isSeeding() && piecesDone <= peerHavePieces.nbSet) { // we're
-																					// seeding,
-																					// check
-																					// if
-																					// peer
-																					// has
-																					// all
-																					// the
-																					// data
-																					// we
-																					// have
-																					// (and
-																					// more),
-																					// flag
-																					// as
-																					// relative
-																					// seed
-																					// if
-																					// so
+			} else if (manager.isSeeding() && piecesDone <= peerHavePieces.nbSet) {
+				// we're seeding, check if peer has all the data we have (and
+				// more), flag as relative seed if so
 				for (int i = peerHavePieces.start; i <= peerHavePieces.end; i++) {
 					// relative seed if we don't have the piece or we have it
 					// and the peer has it too
@@ -3193,30 +3144,40 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 			request_ok = true;
 		}
 
+		Debug.out("decoding request");
 		if (request_ok) {
 			// TODO: add reject on invalid time
 			TOTorrent torrent = diskManager.getTorrent();
 			Long flag = torrent.getAdditionalLongProperty("jomican streaming");
-			if (flag != null && flag == 1) {
 
+			Debug.out("streaming flag = " + flag);
+			if (flag != null && flag == 1) {
+				// if(StreamingUtils.isPieceAvalable(torrent)) {
 				try {
 					Long start_time = torrent.getAdditionalLongProperty("start time");
 					Long video_length = torrent.getAdditionalLongProperty("video length");
-					if (start_time != null && video_length == null) {
-						long curr_time = SystemTime.getCurrentTime() / 1000;
-						long total_piece = torrent.getPieces()[0].length;
 
-						if (total_piece * (curr_time - start_time) < number * video_length && total_piece * (curr_time - start_time + 360) > number * video_length) {
-							System.err.println("Accept piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
+					if (start_time != null && video_length != null) {
+						long curr_time = SystemTime.getCurrentTime() / 1000;
+						long total_piece = torrent.getPieces().length;
+
+						Debug.out("start_time - curr_time / video_length = " + (start_time - curr_time) + " / " + video_length);
+						Debug.out("number / total_piece = " + number + " / " + total_piece);
+
+						if (StreamingUtils.isPieceAvalable(curr_time - start_time, video_length, number, total_piece)) {
+							Debug.out("Accept piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
 						} else {
-							System.err.println("Reject piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
+							Debug.out("Reject piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
 							sendRejectRequest(number, offset, length);
 							allowReconnect = true;
 							return;
 						}
 					}
 				} catch (TOTorrentException e) {
+					Debug.out("Something is wrong");
 				}
+			} else {
+				Debug.out("non streaming torrent");
 			}
 			if (outgoing_piece_message_handler == null || !outgoing_piece_message_handler.addPieceRequest(number, offset, length)) {
 
@@ -3699,7 +3660,12 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 					message.destroy();
 
 					// make sure they're not spamming us
-					if (!message_limiter.countIncomingMessage(message.getID(), 6, 60 * 1000)) { // allow max 6 keep-alives per 60sec
+					if (!message_limiter.countIncomingMessage(message.getID(), 6, 60 * 1000)) { // allow
+																								// max
+																								// 6
+																								// keep-alives
+																								// per
+																								// 60sec
 						System.out.println(manager.getDisplayName() + ": Incoming keep-alive message flood detected, dropping spamming peer connection." + PEPeerTransportProtocol.this);
 						closeConnectionInternally("Incoming keep-alive message flood detected, dropping spamming peer connection.");
 					}
@@ -3730,14 +3696,28 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 				if (message_id.equals(BTMessage.ID_BT_CHOKE)) {
 					decodeChoke((BTChoke) message);
 					if (choking_other_peer) {
-						connection.enableEnhancedMessageProcessing(false, manager.getPartitionID()); // downgrade back to normal handler
+						connection.enableEnhancedMessageProcessing(false, manager.getPartitionID()); // downgrade
+																										// back
+																										// to
+																										// normal
+																										// handler
 					}
 					return true;
 				}
 
 				if (message_id.equals(BTMessage.ID_BT_UNCHOKE)) {
 					decodeUnchoke((BTUnchoke) message);
-					connection.enableEnhancedMessageProcessing(true, manager.getPartitionID()); // make sure we use a fast handler for the resulting download
+					connection.enableEnhancedMessageProcessing(true, manager.getPartitionID()); // make
+																								// sure
+																								// we
+																								// use
+																								// a
+																								// fast
+																								// handler
+																								// for
+																								// the
+																								// resulting
+																								// download
 					return true;
 				}
 
