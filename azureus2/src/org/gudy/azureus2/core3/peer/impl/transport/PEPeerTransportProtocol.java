@@ -58,7 +58,6 @@ import org.gudy.azureus2.core3.peer.util.PeerIdentityDataID;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityManager;
 import org.gudy.azureus2.core3.peer.util.PeerUtils;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AddressUtils;
 import org.gudy.azureus2.core3.util.ByteFormatter;
@@ -3149,32 +3148,13 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 			// TODO: add reject on invalid time
 			TOTorrent torrent = diskManager.getTorrent();
 			Long flag = torrent.getAdditionalLongProperty("jomican streaming");
-
 			Debug.out("streaming flag = " + flag);
 			if (flag != null && flag == 1) {
-				// if(StreamingUtils.isPieceAvalable(torrent)) {
-				try {
-					Long start_time = torrent.getAdditionalLongProperty("start time");
-					Long video_length = torrent.getAdditionalLongProperty("video length");
-
-					if (start_time != null && video_length != null) {
-						long curr_time = SystemTime.getCurrentTime() / 1000;
-						long total_piece = torrent.getPieces().length;
-
-						Debug.out("start_time - curr_time / video_length = " + (start_time - curr_time) + " / " + video_length);
-						Debug.out("number / total_piece = " + number + " / " + total_piece);
-
-						if (StreamingUtils.isPieceAvalable(curr_time - start_time, video_length, number, total_piece)) {
-							Debug.out("Accept piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
-						} else {
-							Debug.out("Reject piece request " + number + "/" + total_piece + " at time " + curr_time + " , start_time = " + start_time + " , video_length = " + video_length + "");
-							sendRejectRequest(number, offset, length);
-							allowReconnect = true;
-							return;
-						}
-					}
-				} catch (TOTorrentException e) {
-					Debug.out("Something is wrong");
+				if (!StreamingUtils.isPieceAvalable(torrent, number)) {
+					Debug.out("Reject piece request " + number + "/" +  torrent.getNumberOfPieces() + " at time " + SystemTime.getCurrentTime() / 1000 + " , start_time = " + torrent.getAdditionalLongProperty("start time") + " , video_length = " +  torrent.getAdditionalLongProperty("video length") + "");
+					sendRejectRequest(number, offset, length);
+					allowReconnect = true;
+					return;
 				}
 			} else {
 				Debug.out("non streaming torrent");
