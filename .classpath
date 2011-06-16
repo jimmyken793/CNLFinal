@@ -7,6 +7,6 @@
 	<classpathentry kind="lib" path="uis/lib/junit.jar"/>
 	<classpathentry kind="lib" path="uis/lib/log4j.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/usr/lib/java/swt-gtk-3.6.2.jar"/>
+	<classpathentry kind="lib" path="lib/swt-linux-x86_64.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

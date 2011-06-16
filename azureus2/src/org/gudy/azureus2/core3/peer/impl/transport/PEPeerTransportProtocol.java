@@ -3096,35 +3096,23 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 			closeConnectionInternally("request for piece #" + number + ":" + offset + "->" + (offset + length - 1) + " is an invalid request");
 			return;
 		}
-
 		if (manager.getHiddenPiece() == number) {
 			closeConnectionInternally("request for piece #" + number + " is invalid as piece is hidden");
 			return;
 		}
-
 		boolean request_ok = false;
-
 		if (choking_other_peer) {
-
 			try {
 				general_mon.enter();
-
 				int[][] pieces = (int[][]) getUserData(KEY_ALLOWED_FAST_SENT);
-
 				if (pieces != null) {
-
 					for (int i = 0; i < pieces.length; i++) {
-
 						if (pieces[i][0] == number) {
-
 							if (pieces[i][1] >= length) {
-
 								pieces[i][1] -= length;
-
 								if (DEBUG_FAST) {
 									System.out.println("Permitting fast-allowed request for " + number + "/" + offset + "/" + length + " to " + getIp());
 								}
-
 								request_ok = true;
 
 								createPieceMessageHandler();
@@ -3143,34 +3131,25 @@ public class PEPeerTransportProtocol extends LogRelation implements PEPeerTransp
 			request_ok = true;
 		}
 
-		Debug.out("decoding request");
 		if (request_ok) {
-			// TODO: add reject on invalid time
 			TOTorrent torrent = diskManager.getTorrent();
 			Long flag = torrent.getAdditionalLongProperty("jomican streaming");
-			Debug.out("streaming flag = " + flag);
 			if (flag != null && flag == 1) {
 				if (!StreamingUtils.isPieceAvalable(torrent, number)) {
-					Debug.out("Reject piece request " + number + "/" +  torrent.getNumberOfPieces() + " at time " + SystemTime.getCurrentTime() / 1000 + " , start_time = " + torrent.getAdditionalLongProperty("start time") + " , video_length = " +  torrent.getAdditionalLongProperty("video length") + "");
+					//Debug.out("Reject piece request " + number + "/" +  torrent.getNumberOfPieces() + " at time " + SystemTime.getCurrentTime() / 1000 + " , start_time = " + torrent.getAdditionalLongProperty("start time") + " , video_length = " +  torrent.getAdditionalLongProperty("video length") + "");
 					sendRejectRequest(number, offset, length);
 					allowReconnect = true;
 					return;
 				}
-			} else {
-				Debug.out("non streaming torrent");
 			}
 			if (outgoing_piece_message_handler == null || !outgoing_piece_message_handler.addPieceRequest(number, offset, length)) {
-
 				sendRejectRequest(number, offset, length);
 			}
-
 			allowReconnect = true;
-
 		} else {
 			if (Logger.isEnabled()) {
 				Logger.log(new LogEvent(this, LOGID, "decodeRequest(): peer request for piece #" + number + ":" + offset + "->" + (offset + length - 1) + " ignored as peer is currently choked."));
 			}
-
 			sendRejectRequest(number, offset, length);
 		}
 	}

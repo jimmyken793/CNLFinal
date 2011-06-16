@@ -57,7 +57,7 @@ public class StreamingUtils {
 				return getPieceIntervalStart(curr_time - start_time, video_length, total_piece);
 			}
 		}
-		return -1;
+		return 0;
 	}
 
 	public static long getPieceIntervalEnd(TOTorrent torrent) {
@@ -74,6 +74,6 @@ public class StreamingUtils {
 				return getPieceIntervalEnd(curr_time - start_time, video_length, total_piece);
 			}
 		}
-		return -1;
+		return torrent.getNumberOfPieces();
 	}
 }

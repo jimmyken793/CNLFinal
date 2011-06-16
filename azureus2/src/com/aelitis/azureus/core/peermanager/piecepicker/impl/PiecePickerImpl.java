@@ -1798,15 +1798,8 @@ public class PiecePickerImpl implements PiecePicker {
 
 		int reservedPieceNumber = -1;
 
-		final int peerSpeed = (int) pt.getStats().getDataReceiveRate() / 1024; // how
-																				// many
-																				// KB/s
-																				// has
-																				// the
-																				// peer
-																				// has
-																				// been
-																				// sending
+		final int peerSpeed = (int) pt.getStats().getDataReceiveRate() / 1024;
+		// how many KB/s has the peer has been sending
 		final int lastPiece = pt.getLastPiece();
 		// final boolean rarestOverride = calcRarestAllowed() > 0;
 		final int nbSnubbed = peerControl.getNbPeersSnubbed();
