@@ -32,7 +32,7 @@ import org.gudy.azureus2.core3.util.Constants;
  * 
  * @author TuxPaper
  * @created May 12, 2010
- *
+ * 
  */
 public class Tree2
 	extends Tree
@@ -44,7 +44,6 @@ public class Tree2
 		super(parent, style);
 	}
 
-	@Override
 	protected void checkSubclass() {
 		// skip check
 	}
@@ -52,7 +51,7 @@ public class Tree2
 	// @see org.eclipse.swt.widgets.Tree#createHandle()
 	void createHandle() {
 		// lucky for us, other platforms have a super.createHandle too
-		super.createHandle(0);
+		super.createHandle();
 		//if (explorerTheme) {
 		//	int bits2 = (int)/*64*/OS.SendMessage (handle, OS.TVM_GETEXTENDEDSTYLE, 0, 0);
 		//	bits2 &= ~OS.TVS_EX_FADEINOUTEXPANDOS;

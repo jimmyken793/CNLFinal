@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="azureus3/src"/>
-	<classpathentry kind="src" path="azureus2/src"/>
+	<classpathentry excluding="org/eclipse/swt/widgets/Tree2.java" kind="src" path="azureus2/src"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="uis/lib/commons-cli.jar"/>
 	<classpathentry kind="lib" path="uis/lib/junit.jar"/>
