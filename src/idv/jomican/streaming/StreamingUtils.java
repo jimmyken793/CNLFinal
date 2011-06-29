@@ -10,6 +10,9 @@ public class StreamingUtils {
 		if (total_piece * BUFFER_TIME > piece * total_time) {
 			return true;
 		}
+		if (total_piece * (total_time-BUFFER_TIME) < piece * total_time) {
+			return true;
+		}
 		return total_piece * (elapsed_time) < piece * total_time && total_piece * (elapsed_time + BUFFER_TIME) > piece * total_time;
 	}
 

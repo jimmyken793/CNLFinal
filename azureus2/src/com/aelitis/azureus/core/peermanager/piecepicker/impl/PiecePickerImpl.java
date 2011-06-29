@@ -1825,28 +1825,9 @@ public class PiecePickerImpl implements PiecePicker {
 						// (requesting, actually)
 
 		final boolean rarestAllowed = calcRarestAllowed() > 0;
-		int _startI = peerHavePieces.start;
-		int _endI = peerHavePieces.end;
 		TOTorrent torrent = diskManager.getTorrent();
-		int start_pos = (int) StreamingUtils.getPieceIntervalStart(torrent);
-		int end_pos = (int) StreamingUtils.getPieceIntervalEnd(torrent);
-		Debug.out("legal pieces: " + start_pos + " ~ " + end_pos);
-		if (start_pos != -1 && end_pos != -1) {
-			if (_startI > end_pos || _endI < start_pos) {
-				return -1;
-			}
-			if (start_pos > _startI) {
-				_startI = start_pos;
-			}
-			if (end_pos < _endI) {
-				_endI = end_pos;
-			}
-		}
-		if (_startI > torrent.getNumberOfPieces() || _endI < 0) {
-			return -1;
-		}
-		final int startI = 0;
-		final int endI = _endI;
+		final int startI = peerHavePieces.start;
+		final int endI = peerHavePieces.end;
 		Debug.out("avaliable pieces: " + startI + " ~ " + endI);
 		int i;
 
