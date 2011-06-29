@@ -1845,7 +1845,7 @@ public class PiecePickerImpl implements PiecePicker {
 		if (_startI > torrent.getNumberOfPieces() || _endI < 0) {
 			return -1;
 		}
-		final int startI = _startI;
+		final int startI = 0;
 		final int endI = _endI;
 		Debug.out("avaliable pieces: " + startI + " ~ " + endI);
 		int i;
@@ -1875,7 +1875,9 @@ public class PiecePickerImpl implements PiecePicker {
 		// Try to continue a piece already loaded, according to priority
 
 		for (i = startI; i <= endI; i++) {
-
+			if(!StreamingUtils.isPieceAvalable(torrent,i)) {
+				continue;
+			}
 			// is the piece available from this peer?
 
 			if (peerHavePieces.flags[i]) {
