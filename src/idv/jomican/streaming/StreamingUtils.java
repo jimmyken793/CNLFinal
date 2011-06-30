@@ -10,10 +10,11 @@ public class StreamingUtils {
 		if (total_piece * BUFFER_TIME > piece * total_time) {
 			return true;
 		}
-		if (total_piece * (total_time-BUFFER_TIME) < piece * total_time) {
+		if (total_piece * (total_time - BUFFER_TIME) < piece * total_time) {
 			return true;
 		}
-		return total_piece * (elapsed_time) < piece * total_time && total_piece * (elapsed_time + BUFFER_TIME) > piece * total_time;
+		long headpiece = (total_piece * BUFFER_TIME) / total_time;
+		return (total_piece - headpiece) * (elapsed_time) < (piece - headpiece) * total_time && (total_piece - headpiece) * (elapsed_time + BUFFER_TIME) > (piece - headpiece) * total_time;
 	}
 
 	public static long getPieceIntervalStart(long elapsed_time, long total_time, int total_piece) {
@@ -21,7 +22,7 @@ public class StreamingUtils {
 	}
 
 	public static long getPieceIntervalEnd(long elapsed_time, long total_time, int total_piece) {
-		return total_piece * (elapsed_time + BUFFER_TIME) / total_time;
+		return total_piece * (elapsed_time + BUFFER_TIME + BUFFER_TIME) / total_time;
 	}
 
 	public static boolean isPieceAvalable(TOTorrent torrent, int piece) {

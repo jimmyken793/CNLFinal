@@ -3,110 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <title>HTML5 Video Player</title>
-
-  <!-- Include the VideoJS Library -->
   <script src="jquery-1.6.1.min.js" type="text/javascript" charset="utf-8"></script>
   <script src="video.js" type="text/javascript" charset="utf-8"></script>
-
-  <script type="text/javascript">
-    // Must come after the video.js library
-
-    // Add VideoJS to all video tags on the page when the DOM is ready
-    //VideoJS.setupAllWhenReady();
-
-    /* ============= OR ============ */
-
-    // Setup and store a reference to the player(s).
-    // Must happen after the DOM is loaded
-    // You can use any library's DOM Ready method instead of VideoJS.DOMReady
-	var myPlayer;
-    function checkTime(){
-		var cur_time=Math.round((new Date()).getTime() / 1000);
-		var cur_pos=cur_time-start_time;
-		var player_pos=myPlayer.currentTime();
-		if(cur_pos>0 && Math.abs(player_pos-cur_pos)>10){
-			myPlayer.currentTime(cur_pos);
-		}
-		setTimeout("$(function(){checkTime();})",30000);
-	}
-    $(function(){
-      
-      // Using the video's ID or element
-	  $("#video_player").VideoJS();
-
-      myPlayer = $("#video_player").player();//VideoJS.setup("video_player");//$("#video_player").player();
-      start_time=$("#start_time").val();
-      content_length=$("#content_length").val();
-	  
-      // OR using an array of video elements/IDs
-      // Note: It returns an array of players
-      //var myManyPlayers = VideoJS.setup(["video_player"]);
-
-      // OR all videos on the page
-      //var myManyPlayers = VideoJS.setup("All");
-      // After you have references to your players you can...(example)
-	  //alert();
-      //
-	  //myPlayer.onPlay
-	  //var curTime=120;
-	  //while(myPlayer.currentTime(curTime)!=curTime){
-	  //}
-	  //alert(myPlayer.currentTime());
-	  //myPlayer.onPlay(checkTime);
-	  setTimeout("$(function(){checkTime();myPlayer.play();})",1000);
-	  //	myPlayer
-	  
-    });
-	
-    
-
-    /* ========= SETTING OPTIONS ========= */
-
-    // Set options when setting up the videos. The defaults are shown here.
-
-    /*
-    VideoJS.setupAllWhenReady({
-      controlsBelow: false, // Display control bar below video instead of in front of
-      controlsHiding: true, // Hide controls when mouse is not over the video
-      defaultVolume: 0.85, // Will be overridden by user's last volume if available
-      flashVersion: 9, // Required flash version for fallback
-      linksHiding: true // Hide download links when video is supported
-    });
-    */
-
-    // Or as the second option of VideoJS.setup
-    
-    /*
-    VideoJS.DOMReady(function(){
-      var myPlayer = VideoJS.setup("example_video_1", {
-        // Same options
-      });
-    });
-    */
-
-  </script>
-
-  <!-- Include the VideoJS Stylesheet -->
+  <script src="main.js" type="text/javascript" charset="utf-8"></script>
+  <script src="var.js" type="text/javascript" charset="utf-8"></script>
   <link rel="stylesheet" href="video-js.css" type="text/css" media="screen" title="Video JS">
 </head>
 <body>
-  <!-- Begin VideoJS -->
   <div class="video-js-box" >
-    <!-- Using the Video for Everybody Embed Code http://camendesign.com/code/video_for_everybody -->
-    <video class="video-js" id="video_player" width="100%" controls preload>
+    <video class="video-js" id="video_player" width="100%" preload>
       <source src="./test.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' />
     </video>
-    <!-- Download links provided for devices that can't play video in the browser. -->
-    <p class="vjs-no-video"><strong>Download Video:</strong>
-      <a href="./test.mp4">MP4</a>,
-      <!-- Support VideoJS by keeping this link. -->
-      <a href="http://videojs.com">HTML5 Video Player</a> by VideoJS
-    </p>
   </div>
-  <!-- End VideoJS -->
-  <form name="jizz">
-	<input type="hidden" name="start_time" id="start_time" value="1309348197" />
-	<input type="hidden" name="content_length" id="content_length" value="874" />
-  </form>
 </body>
 </html>

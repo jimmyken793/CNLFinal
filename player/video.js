@@ -424,7 +424,7 @@ VideoJS.player.extend({
       if (this.options.controlsBelow) { _V_.addClass(this.box, "vjs-controls-below"); }
 
       // Make a click on th video act as a play button
-      this.activateElement(this.video, "playToggle");
+      //this.activateElement(this.video, "playToggle");
 
       // Build Interface
       this.buildStylesCheckDiv(); // Used to check if style are loaded
@@ -579,7 +579,7 @@ VideoJS.player.extend({
     // Build the play control
     this.playControl = _V_.createElement("div", { className: "vjs-play-control", innerHTML: "<span></span>" });
     this.controls.appendChild(this.playControl);
-    this.activateElement(this.playControl, "playToggle");
+    //this.activateElement(this.playControl, "playToggle");
 
     // Build the progress control
     this.progressControl = _V_.createElement("div", { className: "vjs-progress-control" });
@@ -588,7 +588,7 @@ VideoJS.player.extend({
     // Create a holder for the progress bars
     this.progressHolder = _V_.createElement("div", { className: "vjs-progress-holder" });
     this.progressControl.appendChild(this.progressHolder);
-    this.activateElement(this.progressHolder, "currentTimeScrubber");
+    //this.activateElement(this.progressHolder, "currentTimeScrubber");
 
     // Create the loading progress display
     this.loadProgressBar = _V_.createElement("div", { className: "vjs-load-progress" });
@@ -1152,6 +1152,7 @@ VideoJS.player.newBehavior("controlBar", function(element){
 );
 /* PlayToggle, PlayButton, PauseButton Behaviors
 ================================================================================ */
+
 // Play Toggle
 VideoJS.player.newBehavior("playToggle", function(element){
     if (!this.elements.playToggles) {
